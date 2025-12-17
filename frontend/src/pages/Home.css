@@ -1,0 +1,69 @@
+/* 🌄 Banner Section */
+.banner {
+  background-image: url("https://i.pinimg.com/736x/5d/05/5c/5d055c8f612b49c138f6b3ad460d84f3.jpg");
+  background-size: cover;
+  background-position: center;
+  color: white;
+  text-align: center;
+  height: 85vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  animation: fadeIn 2s ease;
+}
+
+.banner::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.banner-content {
+  position: relative;
+  z-index: 1;
+}
+
+/* ✨ Offers Section */
+.offer-card {
+  background: linear-gradient(to right, #fff8e1, #ffe082);
+  transition: 0.3s;
+}
+.offer-card:hover {
+  transform: scale(1.05);
+}
+
+/* 📱 Categories Section */
+.category-card img {
+  height: 220px;
+  object-fit: cover;
+  transition: 0.3s;
+}
+.category-card:hover img {
+  transform: scale(1.05);
+}
+.category-card {
+  transition: 0.3s;
+}
+.category-card:hover {
+  transform: translateY(-5px);
+}
+
+/* 🔤 Typography */
+h1, h2, h5 {
+  font-family: "Poppins", sans-serif;
+}
+
+/* 💫 Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
