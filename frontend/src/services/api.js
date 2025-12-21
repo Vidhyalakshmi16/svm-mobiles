@@ -1,7 +1,7 @@
 import axios from "axios";
 import api from "./axiosInstance";
 
-const BASE_URL = "https://svm-backend.onrender.com/api/api"; // change if different
+const BASE_URL = "https://svm-mobiles.onrender.com/api"; // change if different
 
 
 // Orders
