@@ -3,7 +3,7 @@ import express from "express";
 import ServiceRequest from "../models/ServiceRequest.js";
 import { protect } from "../middleware/authMiddleware.js";
 import sendEmail from "../utils/sendEmail.js";
-import sendSms from "../utils/sendSms.js";
+import sendSms from "../utils/message.js";
 
 const router = express.Router();
 
