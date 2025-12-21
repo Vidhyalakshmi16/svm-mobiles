@@ -45,11 +45,16 @@ export default function Products() {
   let filtered = [...products];
 
   if (search.trim()) {
-    filtered = filtered.filter(
-      (p) =>
-        p.name.toLowerCase().includes(search.toLowerCase()) ||
-        p.brand.toLowerCase().includes(search.toLowerCase())
-    );
+    filtered = filtered.filter((p) => {
+      const name = p.name?.toLowerCase() || "";
+      const brand = p.brand?.toLowerCase() || "";
+
+      return (
+        name.includes(search.toLowerCase()) ||
+        brand.includes(search.toLowerCase())
+      );
+});
+
   }
 
   if (selectedCategory) {
@@ -258,14 +263,11 @@ export default function Products() {
                         />
                       </button>
 
-                      {/* Image */}
-                      <div className="m-img-wrap">
-                        <img
-                          src={p.images?.[0]}
-                          alt={p.name}
-                          className="m-img"
-                        />
-                      </div>
+                      <img
+                        src={p.images?.[0] || p.image || "/placeholder.png"}
+                        alt={p.name}
+                        className="m-img"
+                      />
 
                       {/* Info */}
                       <div className="m-info">
