@@ -3,7 +3,7 @@ import express from "express";
 import Order from "../models/Order.js";
 import { protect } from "../middleware/authMiddleware.js";
 import sendEmail from "../utils/sendEmail.js";
-import sendSms from "../utils/sendSms.js";
+import sendSms from "../utils/message.js";
 import generateInvoicePdf from "../utils/generateInvoicePdf.js";
 
 const router = express.Router();
