@@ -1,5 +1,5 @@
 import sendEmail from "./sendEmail.js";
-import sendSms from "./sendSms.js";
+import sendSms from "./message.js";
 
 /**
  * Central notification handler
