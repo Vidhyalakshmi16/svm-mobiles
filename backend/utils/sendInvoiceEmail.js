@@ -1,30 +1,34 @@
-import transporter from "../config/mailer.js";
+import { Resend } from "resend";
 import fs from "fs";
 
-const sendInvoiceEmail = async ({
-  to,
-  subject,
-  html,
-  pdfPath,
-}) => {
-  const mailOptions = {
-    from: `"Your Store" <${process.env.MAIL_USER}>`,
-    to,
-    subject,
-    html,
-    attachments: [
-      {
-        filename: "invoice.pdf",
-        path: pdfPath,
-        contentType: "application/pdf",
-      },
-    ],
-  };
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-  await transporter.sendMail(mailOptions);
+const sendInvoiceEmail = async ({ to, subject, html, pdfPath }) => {
+  try {
+    const pdfBuffer = fs.readFileSync(pdfPath);
 
-  // optional cleanup later
-  // fs.unlinkSync(pdfPath);
+    await resend.emails.send({
+      from: "Sri Vaari Mobiles <onboarding@resend.dev>",
+      to,
+      subject,
+      html,
+      attachments: [
+        {
+          filename: "invoice.pdf",
+          content: pdfBuffer.toString("base64"),
+          type: "application/pdf",
+        },
+      ],
+    });
+
+    console.log("✅ Invoice email sent to:", to);
+
+    // Optional cleanup
+    // fs.unlinkSync(pdfPath);
+
+  } catch (err) {
+    console.error("❌ Invoice email failed:", err);
+  }
 };
 
 export default sendInvoiceEmail;
