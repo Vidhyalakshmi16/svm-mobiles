@@ -20,12 +20,12 @@ export default function AdminNavbar({
     <>
       <header className="admin-navbar">
         {/* Left */}
-            <button
+            {/* <button
       className="btn btn-light d-md-none"
       onClick={onMenuClick}
     >
       ☰
-    </button>
+    </button> */}
 
         <div>
           <h4 className="admin-title">{title}</h4>
