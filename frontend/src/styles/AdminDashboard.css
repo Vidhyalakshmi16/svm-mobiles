@@ -106,10 +106,20 @@ body,html,#root{height:100%;margin:0;background:var(--bg);color:#111827}
 
 /* responsive */
 @media (max-width: 900px) {
-  .adm-summaries { flex-direction:column; }
-  .charts-row { flex-direction:column; }
-  .admin-sidebar { display:none; }
+  .admin-sidebar {
+    position: fixed;
+    left: -260px;
+    top: 0;
+    height: 100vh;
+    z-index: 1050;
+    transition: left 0.3s ease;
+  }
+
+  .admin-sidebar.mobile-open {
+    left: 0;
+  }
 }
+
 
 
 /* ============ Base Layout ============ */

@@ -14,6 +14,7 @@ function Navbar() {
   const isAdmin = user?.role === "admin";
 
   const handleLogout = () => {
+    closeNavbar();
     logout();
     navigate("/");
   };
@@ -29,6 +30,14 @@ function Navbar() {
   const avatarColor = isAdmin
     ? "linear-gradient(135deg, #facc15, #eab308)" // gold for admin
     : "linear-gradient(135deg, #8a3cc1ff, #914ed0ff)"; // purple for user
+
+  const closeNavbar = () => {
+  const navbar = document.getElementById("navbarNav");
+  if (navbar && navbar.classList.contains("show")) {
+    navbar.classList.remove("show");
+  }
+};
+
 
   return (
     <nav className="navbar navbar-expand-lg navbar-dark bg-dark px-3 shadow-sm fixed-top">
@@ -48,32 +57,32 @@ function Navbar() {
       <div className="collapse navbar-collapse" id="navbarNav">
         <ul className="navbar-nav ms-auto align-items-center gap-2">
           <li className="nav-item">
-            <Link className="nav-link" to="/">
+            <Link className="nav-link" to="/" onClick={closeNavbar}>
               Home
             </Link>
           </li>
 
           <li className="nav-item">
-            <Link className="nav-link" to="/products">
+            <Link className="nav-link" to="/products" onClick={closeNavbar}>
               Products
             </Link>
           </li>
 
           <li className="nav-item">
-            <Link className="nav-link" to="/services">
+            <Link className="nav-link" to="/services" onClick={closeNavbar}>
               Services
             </Link>
           </li>
 
           <li className="nav-item">
-            <Link className="nav-link" to="/orders">
+            <Link className="nav-link" to="/orders" onClick={closeNavbar}>
               Orders
             </Link>
           </li>
 
           {/* CART */}
           <li className="nav-item position-relative">
-            <Link className="nav-link d-flex align-items-center" to="/cart">
+            <Link className="nav-link d-flex align-items-center" to="/cart" onClick={closeNavbar}>
               <ShoppingCart size={22} />
               <span className="ms-1">Cart</span>
 
@@ -111,22 +120,22 @@ function Navbar() {
               </button>
               <ul className="dropdown-menu dropdown-menu-end">
                 <li>
-                  <Link className="dropdown-item" to="/admin/dashboard">
+                  <Link className="dropdown-item" to="/admin/dashboard" onClick={closeNavbar}>
                     Dashboard
                   </Link>
                 </li>
                 <li>
-                  <Link className="dropdown-item" to="/admin/products">
+                  <Link className="dropdown-item" to="/admin/products" onClick={closeNavbar}>
                     Manage Products
                   </Link>
                 </li>
                 <li>
-                  <Link className="dropdown-item" to="/admin/orders">
+                  <Link className="dropdown-item" to="/admin/orders" onClick={closeNavbar}>
                     Manage Orders
                   </Link>
                 </li>
                 <li>
-                  <Link className="dropdown-item" to="/admin/service-requests">
+                  <Link className="dropdown-item" to="/admin/service-requests" onClick={closeNavbar}>
                     Service Requests
                   </Link>
                 </li>
@@ -139,7 +148,10 @@ function Navbar() {
             {!user ? (
               <button
                 className="btn btn-outline-light btn-sm"
-                onClick={() => navigate("/auth")}
+                onClick={() => {
+                  closeNavbar();
+                  navigate("/auth");
+                }}
               >
                 Login
               </button>
@@ -193,7 +205,7 @@ function Navbar() {
   <li>
     <Link
       className="dropdown-item d-flex align-items-center gap-2 py-2"
-      to="/wishlist"
+      to="/wishlist" onClick={closeNavbar}
       style={{ fontSize: "0.9rem" }}
     >
       <Heart size={16} className="text-danger" />

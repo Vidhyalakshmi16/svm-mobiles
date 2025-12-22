@@ -2,7 +2,11 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { FiHome } from "react-icons/fi";
 
-export default function AdminNavbar({ title = "Admin Dashboard" }) {
+export default function AdminNavbar({ 
+  title = "Admin Dashboard", 
+  onMenuClick 
+}) {
+
   const [time, setTime] = useState(new Date());
 
   useEffect(() => {
@@ -16,6 +20,13 @@ export default function AdminNavbar({ title = "Admin Dashboard" }) {
     <>
       <header className="admin-navbar">
         {/* Left */}
+            <button
+      className="btn btn-light d-md-none"
+      onClick={onMenuClick}
+    >
+      ☰
+    </button>
+
         <div>
           <h4 className="admin-title">{title}</h4>
           <div className="admin-subtitle">
