@@ -1,6 +1,11 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Heart, LogOut, UserCircle } from "lucide-react";
+import {
+  Heart,
+  LogOut,
+  UserCircle,
+  ShieldCheck,
+} from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 function MobileTopBar() {
@@ -43,15 +48,51 @@ function MobileTopBar() {
       }}
     >
       {/* BRAND */}
-      <Link to="/" style={{ fontWeight: 700, fontSize: "1.1rem", color: "#000", textDecoration: "none",}}>
+      <Link
+        to="/"
+        style={{
+          fontWeight: 700,
+          fontSize: "1.1rem",
+          color: "#000",
+          textDecoration: "none",
+        }}
+      >
         Sri Vaari Mobiles
       </Link>
 
       {/* RIGHT ICONS */}
-      <div style={{ position: "relative", display: "flex", gap: "14px" }}>
+      <div
+        style={{
+          position: "relative",
+          display: "flex",
+          gap: "14px",
+          alignItems: "center",
+        }}
+      >
+        {/* WISHLIST */}
         <Link to="/wishlist">
           <Heart size={22} color="#e11d48" />
         </Link>
+
+        {/* ADMIN ICON (ONLY FOR ADMIN) */}
+        {user?.role === "admin" && (
+          <Link
+            to="/admin/dashboard"
+            onClick={() => setOpen(false)}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 34,
+              height: 34,
+              borderRadius: "50%",
+              background: "#facc15",
+              color: "#111",
+            }}
+          >
+            <ShieldCheck size={18} />
+          </Link>
+        )}
 
         {/* AVATAR */}
         {user ? (
@@ -89,6 +130,7 @@ function MobileTopBar() {
                   zIndex: 2000,
                 }}
               >
+                {/* USER INFO */}
                 <div style={{ padding: "8px 14px" }}>
                   <div style={{ fontSize: "12px", color: "#6b7280" }}>
                     Signed in as
@@ -100,6 +142,7 @@ function MobileTopBar() {
 
                 <hr style={{ margin: "6px 0" }} />
 
+                {/* LOGOUT */}
                 <button
                   onClick={handleLogout}
                   style={{
@@ -115,32 +158,6 @@ function MobileTopBar() {
                     cursor: "pointer",
                   }}
                 >
-                {user?.role === "admin" && (
-  <>
-    <hr style={{ margin: "6px 0" }} />
-
-    <button
-      onClick={() => {
-        setOpen(false);
-        navigate("/admin/dashboard");
-      }}
-      style={{
-        width: "100%",
-        background: "none",
-        border: "none",
-        padding: "10px 14px",
-        fontWeight: 600,
-        display: "flex",
-        alignItems: "center",
-        gap: "8px",
-        cursor: "pointer",
-      }}
-    >
-      Admin Dashboard
-    </button>
-  </>
-)}
-
                   <LogOut size={16} />
                   Logout
                 </button>
