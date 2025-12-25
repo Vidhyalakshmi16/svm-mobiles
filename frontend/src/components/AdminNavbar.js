@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { FiHome } from "react-icons/fi";
 
 export default function AdminNavbar({
-  title = "Admin Dashboard",
+  title = "Sri Vaari Mobiles",
   onMenuClick,
 }) {
   const [time, setTime] = useState(new Date());
@@ -34,9 +34,6 @@ export default function AdminNavbar({
 
           <div>
             <h4 className="admin-title">{title}</h4>
-            <div className="admin-subtitle">
-              Manage orders & service requests
-            </div>
           </div>
         </div>
 
