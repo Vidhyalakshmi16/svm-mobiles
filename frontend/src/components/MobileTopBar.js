@@ -43,8 +43,8 @@ function MobileTopBar() {
       }}
     >
       {/* BRAND */}
-      <Link to="/" style={{ fontWeight: 700, fontSize: "1.1rem", color: "#000" }}>
-        Sri Vaari
+      <Link to="/" style={{ fontWeight: 700, fontSize: "1.1rem", color: "#000", textDecoration: "none",}}>
+        Sri Vaari Mobiles
       </Link>
 
       {/* RIGHT ICONS */}
@@ -115,6 +115,32 @@ function MobileTopBar() {
                     cursor: "pointer",
                   }}
                 >
+                {user?.role === "admin" && (
+  <>
+    <hr style={{ margin: "6px 0" }} />
+
+    <button
+      onClick={() => {
+        setOpen(false);
+        navigate("/admin/dashboard");
+      }}
+      style={{
+        width: "100%",
+        background: "none",
+        border: "none",
+        padding: "10px 14px",
+        fontWeight: 600,
+        display: "flex",
+        alignItems: "center",
+        gap: "8px",
+        cursor: "pointer",
+      }}
+    >
+      Admin Dashboard
+    </button>
+  </>
+)}
+
                   <LogOut size={16} />
                   Logout
                 </button>
