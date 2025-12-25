@@ -2,11 +2,10 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { FiHome } from "react-icons/fi";
 
-export default function AdminNavbar({ 
-  title = "Admin Dashboard", 
-  onMenuClick 
+export default function AdminNavbar({
+  title = "Admin Dashboard",
+  onMenuClick,
 }) {
-
   const [time, setTime] = useState(new Date());
 
   useEffect(() => {
@@ -19,24 +18,31 @@ export default function AdminNavbar({
   return (
     <>
       <header className="admin-navbar">
-        {/* Left */}
-            {/* <button
-      className="btn btn-light d-md-none"
-      onClick={onMenuClick}
-    >
-      ☰
-    </button> */}
+        {/* LEFT */}
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          {/* MOBILE MENU BUTTON */}
+          <button
+            className="btn btn-light d-md-none"
+            onClick={onMenuClick}
+            style={{
+              fontSize: "20px",
+              padding: "6px 10px",
+            }}
+          >
+            ☰
+          </button>
 
-        <div>
-          <h4 className="admin-title">{title}</h4>
-          <div className="admin-subtitle">
-            Manage orders & service requests
+          <div>
+            <h4 className="admin-title">{title}</h4>
+            <div className="admin-subtitle">
+              Manage orders & service requests
+            </div>
           </div>
         </div>
 
-        {/* Right */}
+        {/* RIGHT */}
         <div className="admin-right">
-          {/* Home icon */}
+          {/* HOME ICON */}
           <Link
             to="/"
             target="_blank"
@@ -60,7 +66,7 @@ export default function AdminNavbar({
         </div>
       </header>
 
-      {/* Inline styles */}
+      {/* INLINE STYLES (unchanged) */}
       <style>{`
         .admin-navbar {
           height: 72px;

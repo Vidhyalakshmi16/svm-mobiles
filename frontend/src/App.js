@@ -45,6 +45,10 @@ import "./styles/AdminDashboard.css";
 function App() {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
+  // 🔑 ADMIN SIDEBAR STATE
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  
+
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
     window.addEventListener("resize", handleResize);
@@ -58,15 +62,12 @@ function App() {
           <div className="d-flex flex-column min-vh-100">
             <Routes>
 
-              {/* 🌐 NORMAL WEBSITE (Desktop + Mobile) */}
+              {/* 🌐 NORMAL WEBSITE */}
               <Route
                 path="/*"
                 element={
                   <>
-                    {/* DESKTOP NAVBAR */}
                     {!isMobile && <Navbar />}
-
-                    {/* MOBILE TOP BAR */}
                     {isMobile && <MobileTopBar />}
 
                     <main
@@ -77,7 +78,6 @@ function App() {
                       }}
                     >
                       <Routes>
-                        {/* Public Routes */}
                         <Route path="/" element={<Home />} />
                         <Route path="/products" element={<Products />} />
                         <Route path="/product/:id" element={<ProductDetail />} />
@@ -89,7 +89,6 @@ function App() {
                         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                         <Route path="/auth" element={<AuthPage />} />
 
-                        {/* Protected Routes */}
                         <Route
                           path="/checkout"
                           element={
@@ -102,23 +101,30 @@ function App() {
                       </Routes>
                     </main>
 
-                    {/* MOBILE BOTTOM NAV */}
                     {isMobile && <MobileBottomNav />}
-
                     <Footer />
                   </>
                 }
               />
 
-              {/* 🔐 ADMIN ROUTES (NO MOBILE NAV HERE) */}
+              {/* 🔐 ADMIN ROUTES */}
               <Route
                 path="/admin/*"
                 element={
                   <PrivateRoute allowedRoles={["admin"]}>
                     <div className="admin-app">
-                      <AdminSidebar />
+                      {/* ✅ SIDEBAR */}
+                      <AdminSidebar
+                        mobileOpen={sidebarOpen}
+                        onClose={() => setSidebarOpen(false)}
+                      />
+
                       <div className="admin-main">
-                        <AdminNavbar />
+                        {/* ✅ TOP NAVBAR */}
+                        <AdminNavbar
+                          onMenuClick={() => setSidebarOpen(!sidebarOpen)}
+                        />
+
                         <div className="admin-content">
                           <Routes>
                             <Route path="dashboard" element={<AdminDashboardPage />} />
@@ -134,7 +140,6 @@ function App() {
                   </PrivateRoute>
                 }
               />
-
             </Routes>
           </div>
 
