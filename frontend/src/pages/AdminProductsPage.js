@@ -13,93 +13,6 @@ import {
   deleteCategoryApi,
 } from "../services/api";
 
-  function MobileProductCard({
-  product,
-  onView,
-  onEdit,
-  onDuplicate,
-  onDelete,
-  isSelected,
-  onSelect,
-}) {
-  const effectivePrice = product.finalPrice ?? product.price ?? 0;
-  const outOfStock = product.stock === 0;
-  const lowStock = product.stock < 5 && product.stock > 0;
-
-  return (
-    <div
-      style={{
-        background: "#fff",
-        borderRadius: 12,
-        padding: 12,
-        boxShadow: "0 2px 10px rgba(0,0,0,0.08)",
-        marginBottom: 12,
-      }}
-    >
-      {/* Top */}
-      <div className="d-flex align-items-center gap-3">
-        <input
-          type="checkbox"
-          checked={isSelected}
-          onChange={onSelect}
-        />
-
-        <img
-          src={product.images?.[0] || ""}
-          alt={product.name}
-          style={{
-            width: 60,
-            height: 60,
-            objectFit: "cover",
-            borderRadius: 8,
-          }}
-        />
-
-        <div style={{ flex: 1 }}>
-          <div style={{ fontWeight: 600 }}>{product.name}</div>
-          <div className="text-muted small">{product.brand}</div>
-          <div className="small">
-            ₹{effectivePrice}{" "}
-            {product.discount ? (
-              <span className="text-muted">
-                <del>₹{product.price}</del>
-              </span>
-            ) : null}
-          </div>
-        </div>
-      </div>
-
-      {/* Stock */}
-      <div className="mt-2 small">
-        Stock: {product.stock}
-        {outOfStock && (
-          <span className="badge bg-danger ms-2">Out</span>
-        )}
-        {lowStock && !outOfStock && (
-          <span className="badge bg-warning text-dark ms-2">Low</span>
-        )}
-      </div>
-
-      {/* Actions */}
-      <div className="d-flex justify-content-between mt-3">
-        <button className="btn btn-sm btn-outline-primary" onClick={onView}>
-          View
-        </button>
-        <button className="btn btn-sm btn-outline-secondary" onClick={onEdit}>
-          Edit
-        </button>
-        <button className="btn btn-sm btn-outline-success" onClick={onDuplicate}>
-          Copy
-        </button>
-        <button className="btn btn-sm btn-outline-danger" onClick={onDelete}>
-          Delete
-        </button>
-      </div>
-    </div>
-  );
-}
-
-
 export default function AdminProductsPage() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -124,21 +37,6 @@ export default function AdminProductsPage() {
 
   const [showQuickView, setShowQuickView] = useState(false);
   const [quickViewProduct, setQuickViewProduct] = useState(null);
-
-  const [isMobile, setIsMobile] = useState(
-  typeof window !== "undefined" && window.innerWidth <= 768
-);
-
-
-useEffect(() => {
-  const handleResize = () => {
-    setIsMobile(window.innerWidth <= 768);
-  };
-  window.addEventListener("resize", handleResize);
-  return () => window.removeEventListener("resize", handleResize);
-}, []);
-
-
 
   // ---------- FORM STATE ----------
   const [form, setForm] = useState({
@@ -566,7 +464,7 @@ const handleDuplicateProduct = (product) => {
         <div className="d-flex justify-content-between align-items-center mb-3">
           <h1 className="adm-title">Products</h1>
 
-          <div className={`d-flex gap-2 ${isMobile ? "flex-column w-100" : ""}`}>
+          <div className="d-flex gap-2">
             <button
               className="btn btn-outline-danger btn-sm"
               onClick={handleBulkDelete}
@@ -649,21 +547,7 @@ const handleDuplicateProduct = (product) => {
             <p>Loading products...</p>
           ) : processedProducts.length === 0 ? (
             <p>No products found. Try changing filters or add a product.</p>
-          ) : isMobile ? (
-    /* 📱 MOBILE CARD VIEW */
-    paginatedProducts.map((p) => (
-      <MobileProductCard
-        key={p._id}
-        product={p}
-        isSelected={isProductSelected(p._id)}
-        onSelect={() => toggleSelectProduct(p._id)}
-        onView={() => openQuickView(p)}
-        onEdit={() => openEditDrawer(p)}
-        onDuplicate={() => handleDuplicateProduct(p)}
-        onDelete={() => handleDeleteProduct(p._id)}
-      />
-    ))
-  ) : (
+          ) : (
             <>
               <div className="table-responsive">
                 <table className="table table-sm align-middle">
@@ -753,7 +637,7 @@ const handleDuplicateProduct = (product) => {
                           </td>
                           <td>{p.category?.name || "-"}</td>
 
-                          <td className={`d-flex gap-2 ${isMobile ? "flex-column w-100" : ""}`}>
+                          <td className="d-flex gap-2">
                             <button
                               className="action-btn view"
                               onClick={() => openQuickView(p)}
@@ -794,7 +678,6 @@ const handleDuplicateProduct = (product) => {
               </div>
 
               {/* Pagination */}
-              {!isMobile && (
               <div className="d-flex justify-content-center mt-3 gap-2">
                 <button
                   className="btn btn-outline-secondary btn-sm"
@@ -826,7 +709,6 @@ const handleDuplicateProduct = (product) => {
                   Next
                 </button>
               </div>
-              )}
             </>
           )}
         </div>
@@ -853,7 +735,7 @@ const handleDuplicateProduct = (product) => {
               top: 0,
               right: 0,
               height: "100vh",
-              width: isMobile ? "100%" : "420px",
+              width: "420px",
               maxWidth: "100%",
               background: "#fff",
               boxShadow: "-2px 0 10px rgba(0,0,0,0.15)",
