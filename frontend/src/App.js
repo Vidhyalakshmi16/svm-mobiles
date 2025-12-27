@@ -73,7 +73,7 @@ function App() {
                     <main
                       className="flex-grow-1"
                       style={{
-                        paddingTop: isMobile ? "30px" : "45px",
+                        paddingTop: isMobile ? "15px" : "35px",
                         paddingBottom: isMobile ? "60px" : "0px",
                       }}
                     >

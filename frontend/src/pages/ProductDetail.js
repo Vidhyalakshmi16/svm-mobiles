@@ -80,15 +80,15 @@ export default function ProductDetail() {
   return (
     <div className="container mt-5 pt-4">
       {/* Breadcrumb */}
-      <nav className="mb-3 small">
-        <Link to="/" className="text-muted text-decoration-none">
-          Home
-        </Link>{" "}
-        /{" "}
-        <Link to="/products" className="text-muted text-decoration-none">
-          Products
-        </Link>{" "}
-        / <span className="fw-medium">{name}</span>
+<nav aria-label="breadcrumb" className="mb-3"> 
+  <ol className="breadcrumb small"> 
+    <li className="breadcrumb-item"> 
+      <Link to="/">Home</Link> </li> 
+      <li className="breadcrumb-item"> 
+        <Link to="/products">Products</Link>
+      </li> 
+      <li className="breadcrumb-item active" aria-current="page"> {name} </li> 
+      </ol> 
       </nav>
 
       <div className="row g-4">
@@ -147,7 +147,7 @@ export default function ProductDetail() {
               </div>
             )}
 
-            <h3 className="fw-bold mb-2">{name}</h3>
+            
 
             {/* Price */}
             <div className="d-flex align-items-baseline gap-2 mb-1">
