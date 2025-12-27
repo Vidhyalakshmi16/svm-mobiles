@@ -16,7 +16,7 @@ export default function Products() {
   const [sortOption, setSortOption] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // ✅ Mobile detection (CORRECT)
+  // ✅ Mobile detection
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
   useEffect(() => {
@@ -25,7 +25,6 @@ export default function Products() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // ✅ Wishlist
   const { toggleWishlist, isInWishlist } = useWishlist();
 
   useEffect(() => {
@@ -48,9 +47,7 @@ export default function Products() {
     setCategories(data);
   };
 
-  // ----------------------------
-  // FILTERING + SORTING
-  // ----------------------------
+  // ---------------- FILTER + SORT ----------------
   let filtered = [...products];
 
   if (search.trim()) {
@@ -95,45 +92,76 @@ export default function Products() {
         Browse Products
       </h2>
 
-      {/* 🔹 MOBILE FILTER BAR */}
+      {/* ================= MOBILE TOP CONTROLS ================= */}
       {isMobile && (
-        <div className="d-flex gap-2 mb-3">
-          <select
-            className="form-select form-select-sm"
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-          >
-            <option value="">All Categories</option>
-            {categories.map((c) => (
-              <option key={c._id} value={c._id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+        <>
+          {/* 🔹 SEARCH + SORT (TOP) */}
+          <div className="d-flex gap-2 mb-2">
+            <div className="flex-grow-1">
+              <div className="input-group input-group-sm">
+                <span className="input-group-text bg-white px-3">
+                  <FiSearch />
+                </span>
+                <input
+                  className="form-control"
+                  placeholder="Search products..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
+            </div>
 
-          <select
-            className="form-select form-select-sm"
-            value={priceRange}
-            onChange={(e) => setPriceRange(e.target.value)}
-          >
-            <option value="">All Prices</option>
-            <option value="0-5000">₹0 - ₹5k</option>
-            <option value="5000-10000">₹5k - ₹10k</option>
-            <option value="10000-50000">₹10k - ₹50k</option>
-            <option value="50000-100000">₹50k - ₹100k</option>
-            <option value=">100000">Above ₹100k</option>
-          </select>
-        </div>
+            <select
+              className="form-select form-select-sm"
+              style={{ width: "140px" }}
+              value={sortOption}
+              onChange={(e) => setSortOption(e.target.value)}
+            >
+              <option value="">Sort</option>
+              <option value="low-high">Low → High</option>
+              <option value="high-low">High → Low</option>
+              <option value="newest">Newest</option>
+            </select>
+          </div>
+
+          {/* 🔹 CATEGORY + PRICE (BELOW) */}
+          <div className="d-flex gap-2 mb-3">
+            <select
+              className="form-select form-select-sm"
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+            >
+              <option value="">All Categories</option>
+              {categories.map((c) => (
+                <option key={c._id} value={c._id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+
+            <select
+              className="form-select form-select-sm"
+              value={priceRange}
+              onChange={(e) => setPriceRange(e.target.value)}
+            >
+              <option value="">All Prices</option>
+              <option value="0-5000">₹0 - ₹5k</option>
+              <option value="5000-10000">₹5k - ₹10k</option>
+              <option value="10000-50000">₹10k - ₹50k</option>
+              <option value="50000-100000">₹50k - ₹100k</option>
+              <option value=">100000">Above ₹100k</option>
+            </select>
+          </div>
+        </>
       )}
 
       <div className="row">
-        {/* 🔹 DESKTOP FILTER PANEL */}
+        {/* ================= DESKTOP FILTER PANEL ================= */}
         {!isMobile && (
           <div className="col-md-3 col-lg-2 mb-4">
             <div className="filter-card">
               <h6 className="filter-title">Filters</h6>
 
-              {/* Category */}
               <div className="filter-section">
                 <div className="filter-section-title">Category</div>
                 <div className="filter-list">
@@ -159,7 +187,6 @@ export default function Products() {
                 </div>
               </div>
 
-              {/* Price */}
               <div className="filter-section">
                 <div className="filter-section-title">Price Range</div>
                 <div className="filter-list">
@@ -186,38 +213,38 @@ export default function Products() {
           </div>
         )}
 
-        {/* 🔹 PRODUCTS SECTION */}
+        {/* ================= PRODUCT GRID ================= */}
         <div className="col-md-9 col-lg-10">
-          {/* Search + Sort */}
-          <div className="d-flex justify-content-between align-items-center mb-3 gap-2">
-            <div style={{ maxWidth: "420px", width: "100%" }}>
-              <div className="input-group input-group-sm">
-                <span className="input-group-text bg-white px-3">
-                  <FiSearch />
-                </span>
-                <input
-                  className="form-control"
-                  placeholder="Search products..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
+          {!isMobile && (
+            <div className="d-flex justify-content-between align-items-center mb-3 gap-2">
+              <div style={{ maxWidth: "420px", width: "100%" }}>
+                <div className="input-group input-group-sm">
+                  <span className="input-group-text bg-white px-3">
+                    <FiSearch />
+                  </span>
+                  <input
+                    className="form-control"
+                    placeholder="Search products..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                  />
+                </div>
               </div>
+
+              <select
+                className="form-select form-select-sm"
+                style={{ width: "180px" }}
+                value={sortOption}
+                onChange={(e) => setSortOption(e.target.value)}
+              >
+                <option value="">Sort by</option>
+                <option value="low-high">Price: Low → High</option>
+                <option value="high-low">Price: High → Low</option>
+                <option value="newest">Newest</option>
+              </select>
             </div>
+          )}
 
-            <select
-              className="form-select form-select-sm"
-              style={{ width: "180px" }}
-              value={sortOption}
-              onChange={(e) => setSortOption(e.target.value)}
-            >
-              <option value="">Sort by</option>
-              <option value="low-high">Price: Low → High</option>
-              <option value="high-low">Price: High → Low</option>
-              <option value="newest">Newest</option>
-            </select>
-          </div>
-
-          {/* PRODUCT GRID */}
           {loading ? (
             <p>Loading products...</p>
           ) : (
@@ -254,11 +281,15 @@ export default function Products() {
                       <div className="m-brand">{p.brand}</div>
                       <div className="m-name">{p.name}</div>
                       <div className="m-price-row">
-                        <span className="m-price">₹{p.finalPrice ?? p.price}</span>
+                        <span className="m-price">
+                          ₹{p.finalPrice ?? p.price}
+                        </span>
                         {p.discount > 0 && (
                           <>
                             <span className="m-mrp">₹{p.price}</span>
-                            <span className="m-discount">{p.discount}% OFF</span>
+                            <span className="m-discount">
+                              {p.discount}% OFF
+                            </span>
                           </>
                         )}
                       </div>
@@ -372,17 +403,18 @@ export default function Products() {
         }
 
         .m-info {
-          padding: 8px 10px 10px;
+          padding: 6px 10px 10px;
         }
         .m-brand {
           font-size: 13px;
           font-weight: 600;
           color: #222;
+          margin-bottom: 2px;
         }
         .m-name {
           font-size: 12px;
           color: #555;
-          margin: 4px 0 8px;
+          margin: 0px 0 8px;
           height: 32px;            /* FORCE SAME HEIGHT */
           display: -webkit-box;
           -webkit-line-clamp: 2;
@@ -403,14 +435,16 @@ export default function Products() {
 
         .m-mrp {
           font-size: 12px;
-          color: #999;
+          color: #9ca3af;
+          text-decoration: line-through;   /* ✅ STRIKE */
+          text-decoration-thickness: 1.5px;
         }
 
         .m-discount {
           font-size: 11px;
           color: #1ba54a;
           font-weight: 600;
-          margin-left: auto;  /* pushes discount to right */
+          // margin-left: auto;  /* pushes discount to right */
         }
 
         .m-outstock {
