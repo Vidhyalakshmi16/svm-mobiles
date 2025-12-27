@@ -246,50 +246,45 @@ if (!user) {
   return (
     <div className="container mt-5 pt-4 order-page">
       {/* Header + Filters */}
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <div>
-          <h3 className="fw-bold mb-0">Your Activity</h3>
-          <small className="text-muted">
-            {combined.length} record{combined.length > 1 ? "s" : ""} &nbsp;•&nbsp;
-            Orders & Service Requests
-          </small>
-        </div>
+<div className="mb-3">
+  <h3 className="fw-bold mb-1">Your Activity</h3>
+  <small className="text-muted d-block mb-2">
+    {combined.length} record{combined.length > 1 ? "s" : ""} • Orders & Service Requests
+  </small>
 
-        <div className="d-flex align-items-center gap-2">
-          {/* TYPE FILTER: Orders / Service */}
-          <div className="btn-group btn-group-sm">
-            <button
-              className={`btn ${
-                activeType === "orders" ? "btn-dark" : "btn-outline-dark"
-              }`}
-              onClick={() => setActiveType("orders")}
-            >
-              Orders
-            </button>
-            <button
-              className={`btn ${
-                activeType === "service" ? "btn-dark" : "btn-outline-dark"
-              }`}
-              onClick={() => setActiveType("service")}
-            >
-              Service
-            </button>
-          </div>
+  <div className="d-flex flex-wrap gap-2">
+    <div className="btn-group btn-group-sm">
+      <button
+        className={`btn ${
+          activeType === "orders" ? "btn-dark" : "btn-outline-dark"
+        }`}
+        onClick={() => setActiveType("orders")}
+      >
+        Orders
+      </button>
+      <button
+        className={`btn ${
+          activeType === "service" ? "btn-dark" : "btn-outline-dark"
+        }`}
+        onClick={() => setActiveType("service")}
+      >
+        Service
+      </button>
+    </div>
 
-          {/* STATUS FILTER DROPDOWN */}
-          <select
-            className="form-select form-select-sm"
-            style={{ width: "150px" }}
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-          >
-            <option value="all">All status</option>
-            <option value="active">Active</option>
-            <option value="completed">Completed</option>
-            <option value="cancelled">Cancelled</option>
-          </select>
-        </div>
-      </div>
+    <select
+      className="form-select form-select-sm"
+      style={{ maxWidth: "160px" }}
+      value={statusFilter}
+      onChange={(e) => setStatusFilter(e.target.value)}
+    >
+      <option value="all">All status</option>
+      <option value="active">Active</option>
+      <option value="completed">Completed</option>
+      <option value="cancelled">Cancelled</option>
+    </select>
+  </div>
+</div>
 
       {/* Cards Grid */}
       <div className="row g-3">
@@ -360,7 +355,7 @@ if (!user) {
                   </div>
                 </div>
 
-                <hr className="my-2" />
+                <div className="my-2" />
 
                 {/* Middle content */}
                 {isOrder ? (
@@ -503,14 +498,19 @@ if (!user) {
                     <span className="fw-semibold text-dark">{status}</span>
                   </small>
 
-                  <button
-                    className="btn btn-sm btn-outline-danger rounded-pill"
-                    disabled={!canCancel || busy}
-                    onClick={() => handleCancel(item)}
-                    style={{ fontSize: "12px", paddingInline: "14px" }}
-                  >
-                    {busy ? "Cancelling..." : "Cancel"}
-                  </button>
+                  {canCancel ? (
+                    <button
+                      className="btn btn-sm btn-outline-danger rounded-pill"
+                      disabled={busy}
+                      onClick={() => handleCancel(item)}
+                      style={{ fontSize: "12px", paddingInline: "14px" }}
+                    >
+                      {busy ? "Cancelling..." : "Cancel"}
+                    </button>
+                  ) : (
+                    <span className="small text-muted">Not cancellable</span>
+                  )}
+
                 </div>
 
                 {/* Hint when in progress */}
@@ -535,7 +535,7 @@ if (!user) {
         .order-card {
           background: #ffffff;
           border-radius: 16px;
-          padding: 14px 16px;
+          padding: 12px 14px;
           border: 1px solid #edf0f7;
           box-shadow: 0 10px 26px rgba(15, 23, 42, 0.06);
           position: relative;
@@ -555,17 +555,18 @@ if (!user) {
           display: inline-flex;
           align-items: center;
           gap: 6px;
-          padding: 3px 8px;
+          padding: 2px 8px;
           border-radius: 999px;
-          font-size: 11px;
+          font-size: 10px;
           background: linear-gradient(135deg, #111827, #4b5563);
           color: #f9fafb;
           box-shadow: 0 4px 10px rgba(15, 23, 42, 0.15);
+          opacity: 0.9;
         }
         .status-pill {
           padding: 3px 10px;
           border-radius: 999px;
-          font-size: 11px;
+          font-size: 12px;
           font-weight: 600;
         }
         .status-pill.success {
@@ -583,8 +584,11 @@ if (!user) {
 
         @media (max-width: 576px) {
           .order-card {
-            padding: 12px 12px;
-          }
+              border-radius: 14px;
+            }
+            .status-pill {
+              font-size: 11px;
+            }
         }
       `}</style>
     </div>

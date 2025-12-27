@@ -80,7 +80,7 @@ export default function ProductDetail() {
   return (
     <div className="container mt-5 pt-4">
       {/* Breadcrumb */}
-      <nav aria-label="breadcrumb" className="mb-3">
+      {/* <nav aria-label="breadcrumb" className="mb-3">
         <ol className="breadcrumb small">
           <li className="breadcrumb-item">
             <Link to="/">Home</Link>
@@ -92,7 +92,7 @@ export default function ProductDetail() {
             {name}
           </li>
         </ol>
-      </nav>
+      </nav> */}
 
 
       <div className="row g-4">
