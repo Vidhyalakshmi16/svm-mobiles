@@ -80,16 +80,20 @@ export default function ProductDetail() {
   return (
     <div className="container mt-5 pt-4">
       {/* Breadcrumb */}
-<nav aria-label="breadcrumb" className="mb-3"> 
-  <ol className="breadcrumb small"> 
-    <li className="breadcrumb-item"> 
-      <Link to="/">Home</Link> </li> 
-      <li className="breadcrumb-item"> 
-        <Link to="/products">Products</Link>
-      </li> 
-      <li className="breadcrumb-item active" aria-current="page"> {name} </li> 
-      </ol> 
+      <nav aria-label="breadcrumb" className="mb-3">
+        <ol className="breadcrumb small">
+          <li className="breadcrumb-item">
+            <Link to="/">Home</Link>
+          </li>
+          <li className="breadcrumb-item">
+            <Link to="/products">Products</Link>
+          </li>
+          <li className="breadcrumb-item active" aria-current="page">
+            {name}
+          </li>
+        </ol>
       </nav>
+
 
       <div className="row g-4">
         {/* Images */}
@@ -107,7 +111,7 @@ export default function ProductDetail() {
             </button>
 
             <img
-              src={images[activeImage]}
+              src={images[activeImage] || "/placeholder.png"}
               alt={name}
               className="w-100"
               style={{ height: 340, objectFit: "contain" }}
@@ -141,13 +145,8 @@ export default function ProductDetail() {
         {/* Details */}
         <div className="col-md-7">
           <div className="bg-white rounded-4 shadow-sm p-4">
-            {brand && (
-              <div className="text-uppercase small text-muted mb-1">
-                {brand}
-              </div>
-            )}
 
-            
+            <h3 className="fw-bold mb-2">{name}</h3>
 
             {/* Price */}
             <div className="d-flex align-items-baseline gap-2 mb-1">
