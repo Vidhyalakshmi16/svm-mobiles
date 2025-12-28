@@ -36,7 +36,6 @@ function Footer() {
             {/* Social Icons */}
             <div className="social-icons mt-2">
               <a href="#" className="footer-icon mx-2"><i className="bi bi-facebook"></i></a>
-              <a href="#" className="footer-icon mx-2"><i className="bi bi-instagram"></i></a>
               <a href="https://www.instagram.com/sri_vaarimobiles?igsh=ZGViYXg4c3doYjA3" className="footer-icon mx-2" target="_blank" rel="noopener noreferrer">
               <i className="bi bi-instagram"></i></a>
               <a href="#" className="footer-icon mx-2"><i className="bi bi-twitter-x"></i></a>
