@@ -271,7 +271,7 @@ const handleSubmit = async (e) => {
                 className="btn btn-dark w-100"
                 disabled={loading}
               >
-                {loading ? "Sending..." : "Submit Request"}
+                {loading ? "Sending..." : user ? "Submit Request" : "Login to Submit"}
               </button>
             </form>
           </div>
