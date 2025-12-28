@@ -29,14 +29,16 @@ function Footer() {
           {/* Contact Info */}
           <div className="col-md-4 mb-3">
             <h5 className="fw-bold">Contact Us</h5>
-            <p>📍 Salem, Tamil Nadu</p>
+            <p>📍 296/82, Tvk road, Ammapet, Salem, Tamil Nadu</p>
             <p>📞 +91 87546 74075</p>
-            <p>📧 srivaarimobiles@gmail.com</p>
+            <p>📧 srivaarimobiles2021@gmail.com</p>
 
             {/* Social Icons */}
             <div className="social-icons mt-2">
               <a href="#" className="footer-icon mx-2"><i className="bi bi-facebook"></i></a>
               <a href="#" className="footer-icon mx-2"><i className="bi bi-instagram"></i></a>
+              <a href="https://www.instagram.com/sri_vaarimobiles?igsh=ZGViYXg4c3doYjA3" className="footer-icon mx-2" target="_blank" rel="noopener noreferrer">
+              <i className="bi bi-instagram"></i></a>
               <a href="#" className="footer-icon mx-2"><i className="bi bi-twitter-x"></i></a>
             </div>
           </div>

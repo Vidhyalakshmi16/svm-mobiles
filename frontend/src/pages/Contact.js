@@ -2,6 +2,8 @@
 import React, { useState } from "react";
 import { toast } from "react-toastify";
 import { submitContactForm } from "../services/api"; // you'll create this API helper
+import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 
 export default function Contact() {
@@ -16,6 +18,9 @@ export default function Contact() {
     message: "",
     allowWhatsApp: true,
   });
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -43,12 +48,26 @@ export default function Contact() {
 
 const handleSubmit = async (e) => {
   e.preventDefault();
+
+  // 🔐 LOGIN CHECK (ADD THIS)
+  if (!user) {
+    toast.info("Please login to submit a service request");
+    navigate("/auth", {
+      state: { redirectTo: "/contact" },
+    });
+    return;
+  }
+
+  // ✅ FORM VALIDATION
   if (!validate()) return;
 
   try {
     setLoading(true);
     await submitContactForm(form);
+
     toast.success("Thank you! We’ll contact you shortly.");
+
+    // Reset form
     setForm({
       name: "",
       phone: "",
@@ -68,6 +87,7 @@ const handleSubmit = async (e) => {
     setLoading(false);
   }
 };
+
 
 
   return (
@@ -263,7 +283,7 @@ const handleSubmit = async (e) => {
             <h5 className="fw-semibold mb-3">Sri Vaari Mobiles</h5>
             <p className="mb-1 text-muted small">Shop Address</p>
             <p className="mb-2">
-              91, Marimuthu Street, Ammapet,<br />
+              296/82, Tvk road, Ammapet,<br />
               Salem, Tamil Nadu – 636003
             </p>
 
@@ -297,7 +317,7 @@ const handleSubmit = async (e) => {
               </a>
               {/* If you have Google Maps link, put it here */}
               <a
-                href="https://www.google.com/maps"
+                href="https://maps.app.goo.gl/nD6n1AyyXkDNaxTV7"
                 target="_blank"
                 rel="noreferrer"
                 className="btn btn-outline-secondary btn-sm"
