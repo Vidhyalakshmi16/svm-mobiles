@@ -170,6 +170,20 @@ export const cancelServiceRequest = async (id) => {
   return updateServiceRequestStatus(id, "Cancelled");
 };
 
+// ---------- PAYMENTS (RAZORPAY) ----------
+
+// Create Razorpay order
+export const createPaymentOrderApi = async (data) => {
+  const res = await axios.post(`${BASE_URL}/payment/create`, data);
+  return res.data;
+};
+
+// Verify Razorpay payment
+export const verifyPaymentApi = async (data) => {
+  const res = await axios.post(`${BASE_URL}/payment/verify`, data);
+  return res.data;
+};
+
 
 
 

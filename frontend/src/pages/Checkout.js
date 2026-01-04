@@ -4,6 +4,11 @@ import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { createOrderApi } from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import {
+  createPaymentOrderApi,
+  verifyPaymentApi,
+} from "../services/api";
+
 
 
 export default function Checkout() {
@@ -67,14 +72,17 @@ const handlePlaceOrder = async (e) => {
     return;
   }
 
-  setPlacing(true);
-
-  // 🔐 Razorpay key safety check
-  if (!process.env.REACT_APP_RAZORPAY_KEY) {
-    alert("Payment configuration error. Please try again later.");
-    setPlacing(false);
+  if (!window.Razorpay) {
+    alert("Razorpay SDK not loaded");
     return;
   }
+
+  if (!process.env.REACT_APP_RAZORPAY_KEY) {
+    alert("Payment configuration error");
+    return;
+  }
+
+  setPlacing(true);
 
   try {
     const customer = {
@@ -86,8 +94,8 @@ const handlePlaceOrder = async (e) => {
       email: user.email,
     };
 
-    // 1️⃣ Create order (Pending Payment)
-    const orderPayload = {
+    // 1️⃣ Create order in DB (Pending Payment)
+    const order = await createOrderApi({
       customer,
       paymentMethod: "UPI",
       subtotal,
@@ -95,21 +103,15 @@ const handlePlaceOrder = async (e) => {
       platformFee,
       total: grandTotal,
       items: cartItems,
-    };
-
-    const order = await createOrderApi(orderPayload);
+    });
 
     // 2️⃣ Create Razorpay order (backend)
-    const razorpayOrder = await fetch("/api/payment/create", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        amount: grandTotal,
-        orderId: order._id,
-      }),
-    }).then((res) => res.json());
+    const razorpayOrder = await createPaymentOrderApi({
+      amount: grandTotal,
+      orderId: order._id,
+    });
 
-    // 3️⃣ Open Razorpay Checkout
+    // 3️⃣ Open Razorpay popup
     const options = {
       key: process.env.REACT_APP_RAZORPAY_KEY,
       amount: razorpayOrder.amount,
@@ -117,33 +119,30 @@ const handlePlaceOrder = async (e) => {
       name: "Sri Vaari Mobiles",
       description: "Order Payment",
       order_id: razorpayOrder.razorpayOrderId,
+
       handler: async (response) => {
-        // 4️⃣ Verify payment
-        await fetch("/api/payment/verify", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            ...response,
-            orderId: order._id,
-          }),
+        await verifyPaymentApi({
+          ...response,
+          orderId: order._id,
         });
 
         clearCart();
         navigate("/order-success", { state: { order } });
       },
+
       theme: { color: "#111827" },
     };
 
     const rzp = new window.Razorpay(options);
     rzp.open();
+
   } catch (err) {
-    console.error(err);
+    console.error("Payment error:", err);
     alert("Payment failed. Please try again.");
   } finally {
     setPlacing(false);
   }
 };
-
 
 
   // ---------- EMPTY STATE ----------
