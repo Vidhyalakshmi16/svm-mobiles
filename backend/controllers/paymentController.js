@@ -11,6 +11,7 @@ const razorpay = new Razorpay({
 
 // ---------------- CREATE RAZORPAY ORDER ----------------
 export const createPaymentOrder = async (req, res) => {
+    console.log("➡️ Payment create called", req.body);
   try {
     const { amount, orderId } = req.body;
 
