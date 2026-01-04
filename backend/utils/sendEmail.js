@@ -5,15 +5,17 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 const sendEmail = async ({ to, subject, html }) => {
   try {
     const response = await resend.emails.send({
-      from: "Sri Vaari Mobiles <noreply@srivaarimobiles.com>",
+      from: `Sri Vaari Mobiles <${process.env.EMAIL_FROM}>`,
       to,
       subject,
       html,
     });
 
     console.log("✅ Email sent:", response.id);
+    return response;
   } catch (err) {
     console.error("❌ Resend email error:", err);
+    throw err;
   }
 };
 

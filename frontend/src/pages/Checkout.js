@@ -21,7 +21,6 @@ export default function Checkout() {
     address: "",
     city: "",
     pincode: "",
-    paymentMethod: "cod", // COD by default
   });
 
   const [placing, setPlacing] = useState(false);
@@ -57,44 +56,95 @@ export default function Checkout() {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handlePlaceOrder = async (e) => {
-    e.preventDefault();
-    if (isEmpty) return;
+const handlePlaceOrder = async (e) => {
+  e.preventDefault();
+  if (isEmpty) return;
 
-    const { name, phone, address, city, pincode, paymentMethod } = form;
+  const { name, phone, address, city, pincode } = form;
 
-    if (!name || !phone || !address || !city || !pincode) {
-      alert("Please fill all required fields");
-      return;
-    }
+  if (!name || !phone || !address || !city || !pincode) {
+    alert("Please fill all required fields");
+    return;
+  }
 
-    setPlacing(true);
+  setPlacing(true);
 
-    try {
-      const customer = { name, phone, address, city, pincode };
+  // 🔐 Razorpay key safety check
+  if (!import.meta.env.VITE_RAZORPAY_KEY) {
+    alert("Payment configuration error. Please try again later.");
+    setPlacing(false);
+    return;
+  }
 
-      const payload = {
-        customer,
-        paymentMethod:
-          paymentMethod === "cod" ? "Cash on Delivery" : "UPI",
-        subtotal,
-        deliveryFee,
-        platformFee,
-        total: grandTotal,
-        items: cartItems,
-      };
+  try {
+    const customer = {
+      name,
+      phone,
+      address,
+      city,
+      pincode,
+      email: user.email,
+    };
 
-      const savedOrder = await createOrderApi(payload);
+    // 1️⃣ Create order (Pending Payment)
+    const orderPayload = {
+      customer,
+      paymentMethod: "UPI",
+      subtotal,
+      deliveryFee,
+      platformFee,
+      total: grandTotal,
+      items: cartItems,
+    };
 
-      clearCart();
-      navigate("/order-success", { state: { order: savedOrder } });
-    } catch (err) {
-      console.error(err);
-      alert("Failed to place order. Please try again.");
-    } finally {
-      setPlacing(false);
-    }
-  };
+    const order = await createOrderApi(orderPayload);
+
+    // 2️⃣ Create Razorpay order (backend)
+    const razorpayOrder = await fetch("/api/payment/create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        amount: grandTotal,
+        orderId: order._id,
+      }),
+    }).then((res) => res.json());
+
+    // 3️⃣ Open Razorpay Checkout
+    const options = {
+      key: import.meta.env.VITE_RAZORPAY_KEY,
+      amount: razorpayOrder.amount,
+      currency: "INR",
+      name: "Sri Vaari Mobiles",
+      description: "Order Payment",
+      order_id: razorpayOrder.razorpayOrderId,
+      handler: async (response) => {
+        // 4️⃣ Verify payment
+        await fetch("/api/payment/verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...response,
+            orderId: order._id,
+          }),
+        });
+
+        clearCart();
+        navigate("/order-success", { state: { order } });
+      },
+      theme: { color: "#111827" },
+    };
+
+    const rzp = new window.Razorpay(options);
+    rzp.open();
+  } catch (err) {
+    console.error(err);
+    alert("Payment failed. Please try again.");
+  } finally {
+    setPlacing(false);
+  }
+};
+
+
 
   // ---------- EMPTY STATE ----------
   if (isEmpty) {
@@ -201,26 +251,15 @@ export default function Checkout() {
                 </div>
               </div>
 
-              <div className="mb-3">
-                <label className="form-label">Payment Method</label>
-                <select
-                  className="form-select"
-                  name="paymentMethod"
-                  value={form.paymentMethod}
-                  onChange={handleChange}
-                >
-                  <option value="cod">Cash on Delivery</option>
-                  <option value="upi">UPI (Online Payment)</option>
-                </select>
-
-                <div className="small text-muted mt-1">
-                  {form.paymentMethod === "upi" ? (
-                    <>UPI: secure online payment.</>
-                  ) : (
-                    <>Cash on Delivery: Pay in cash when the product arrives.</>
-                  )}
+                <div className="mb-3">
+                  <label className="form-label">Payment Method</label>
+                  <div className="alert alert-success small">
+                    UPI Payment (Google Pay / PhonePe / Paytm)
+                  </div>
+                  <div className="small text-muted mt-1">
+                    Secure UPI payment. Supports Google Pay, PhonePe & Paytm.
+                  </div>
                 </div>
-              </div>
 
               <button
                 type="submit"

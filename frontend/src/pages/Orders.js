@@ -76,24 +76,33 @@ const getStatus = (item) => {
 
   const s = raw.toString().toLowerCase().trim();
 
-  // PLACED
-  if (["", "place", "placed"].includes(s)) {
+  // 💰 PAYMENT STATES
+  if (["pending payment", "payment pending"].includes(s)) {
+    return "Pending Payment";
+  }
+
+  if (["paid", "payment success", "payment completed"].includes(s)) {
+    return "Paid";
+  }
+
+  // 📦 PLACED (after payment)
+  if (["placed"].includes(s)) {
     return "Placed";
   }
 
-  // IN PROGRESS
+  // 🔄 IN PROGRESS
   if (
     ["new", "pending", "processing", "assigned", "open", "in progress"].includes(s)
   ) {
     return "In Progress";
   }
 
-  // COMPLETED
+  // ✅ COMPLETED
   if (["completed", "done", "closed", "resolved"].includes(s)) {
     return "Completed";
   }
 
-  // CANCELLED
+  // ❌ CANCELLED
   if (["cancelled", "canceled"].includes(s)) {
     return "Cancelled";
   }

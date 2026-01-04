@@ -1,5 +1,6 @@
 // backend/controllers/orderController.js
 import Order from "../models/Order.js";
+import sendEmail from "../utils/sendEmail.js";
 
 export const createOrder = async (req, res) => {
   try {
@@ -9,9 +10,8 @@ export const createOrder = async (req, res) => {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
-    // Map frontend cart items → order items
     const orderItems = items.map((item) => ({
-      productId: item._id,              // from Product
+      productId: item._id,
       name: item.name,
       brand: item.brand,
       price: item.price,
@@ -24,12 +24,15 @@ export const createOrder = async (req, res) => {
     const order = new Order({
       customer,
       paymentMethod,
-      status: "Placed",
+      status: "Pending Payment", // ✅ IMPORTANT
       total,
       items: orderItems,
     });
 
     const saved = await order.save();
+
+    // ❌ DO NOT send email here for Razorpay
+    // Email must be sent only after payment success
 
     res.status(201).json(saved);
   } catch (err) {
@@ -37,6 +40,8 @@ export const createOrder = async (req, res) => {
     res.status(500).json({ message: "Failed to create order" });
   }
 };
+
+
 
 export const getOrders = async (req, res) => {
   try {
