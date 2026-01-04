@@ -17,7 +17,17 @@ dotenv.config();
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(
+  cors({
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
+// IMPORTANT: allow preflight
+app.options("*", cors());
+
 app.use(express.json());
 
 // Routes
@@ -28,7 +38,5 @@ app.use("/api/contact", contactRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/invoice", invoiceRoutes);
 app.use("/api/payment", paymentRoutes);
-
-
 
 export default app;

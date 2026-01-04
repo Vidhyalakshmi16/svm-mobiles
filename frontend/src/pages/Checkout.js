@@ -77,7 +77,7 @@ const handlePlaceOrder = async (e) => {
     return;
   }
 
-  if (!process.env.REACT_APP_RAZORPAY_KEY) {
+  if (!process.env.REACT_APP_RAZORPAY_KEY_ID) {
     alert("Payment configuration error");
     return;
   }
@@ -113,7 +113,7 @@ const handlePlaceOrder = async (e) => {
 
     // 3️⃣ Open Razorpay popup
     const options = {
-      key: process.env.REACT_APP_RAZORPAY_KEY,
+      key: process.env.REACT_APP_RAZORPAY_KEY_ID,
       amount: razorpayOrder.amount,
       currency: "INR",
       name: "Sri Vaari Mobiles",
