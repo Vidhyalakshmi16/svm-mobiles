@@ -1,39 +1,47 @@
-// backend/models/ServiceRequest.js
 import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
 
-const serviceRequestSchema = new mongoose.Schema(
+const userSchema = new mongoose.Schema(
   {
-    // 🔐 link to logged-in user (customer)
-    user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-
-    // basic details
-    name: String,
-    phone: String,
-    email: String,
-
-    // device / issue details
-    deviceType: String,
-    mobileBrand: String,
-    mobileModel: String,
-    issueType: String,
-
-    preferredDate: String,
-    preferredTime: String,
-
-    message: String,
-
-    status: {
+    name: {
       type: String,
-      enum: ["New", "In Progress", "Completed", "Cancelled"],
-      default: "New",
+      required: true,
+      trim: true,
+    },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
+    },
+    password: {
+      type: String,
+      required: true,
+      minlength: 6,
+    },
+    role: {
+      type: String,
+      enum: ["customer", "admin"],
+      default: "customer",
     },
   },
   { timestamps: true }
 );
 
-const ServiceRequest = mongoose.model(
-  "ServiceRequest",
-  serviceRequestSchema
-);
+// Hash password before saving
+userSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) return next();
 
-export default ServiceRequest;
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
+  next();
+});
+
+// Compare password
+userSchema.methods.matchPassword = async function (enteredPassword) {
+  return bcrypt.compare(enteredPassword, this.password);
+};
+
+const User = mongoose.model("User", userSchema);
+export default User;
