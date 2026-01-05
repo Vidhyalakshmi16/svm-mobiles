@@ -65,12 +65,30 @@ const Services = () => {
     visible: { opacity: 1, y: 0 },
   };
 
+  const BookServiceButton = () => (
+  <motion.button
+    whileHover={{ scale: 1.05 }}
+    whileTap={{ scale: 0.95 }}
+    className="btn btn-primary px-4 py-2 rounded-pill"
+    onClick={() => navigate("/contact")}
+  >
+    Book a Service
+  </motion.button>
+);
+
+
   return (
     <div className="container pt-5 mt-5">
       <h2 className="text-center fw-bold mb-3">Our Mobile Repair Services</h2>
       <p className="text-center text-muted mb-5">
         Whatever your phone problem is, we have a reliable solution. Fast, trusted, and affordable service for all brands.
       </p>
+
+      {/* MOBILE ONLY – Top Button */}
+      <div className="text-center mb-4 d-block d-md-none">
+        <BookServiceButton />
+      </div>
+
 
       <div className="row g-4">
         {services.map((service, index) => (
@@ -97,16 +115,11 @@ const Services = () => {
       </div>
 
       {/* Button Section */}
-      <div className="text-center mt-5">
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className="btn btn-primary px-4 py-2 rounded-pill"
-          onClick={() => navigate("/contact")} // Change to "/booking" if you create that page
-        >
-          Book a Service
-        </motion.button>
+      {/* DESKTOP ONLY – Bottom Button */}
+      <div className="text-center mt-5 d-none d-md-block">
+        <BookServiceButton />
       </div>
+
     </div>
   );
 };
