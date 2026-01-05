@@ -5,6 +5,8 @@ import { useCart } from "../context/CartContext";
 import { toast } from "react-toastify";
 import { FiHeart } from "react-icons/fi";
 import { useWishlist } from "../context/WishlistContext";
+import { useAuth } from "../context/AuthContext";
+
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -16,6 +18,7 @@ export default function ProductDetail() {
   const [loading, setLoading] = useState(true);
   const [qty, setQty] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
+  const { user } = useAuth();
 
   useEffect(() => {
     const fetchProd = async () => {
@@ -72,10 +75,25 @@ export default function ProductDetail() {
   };
 
   const handleBuyNow = () => {
-    if (!inStock) return toast.warn("Out of stock");
+    if (!inStock) {
+      toast.warn("Out of stock");
+      return;
+    }
+
+    // 🔒 Not logged in → go to login
+    if (!user) {
+      toast.info("Please login to continue");
+      navigate("/auth", {
+        state: { from: `/product/${id}` }, // optional redirect back
+      });
+      return;
+    }
+
+    // ✅ Logged in → proceed
     addToCart(product, qty);
     navigate("/checkout");
   };
+
 
   return (
     <div className="container mt-5 pt-4">
