@@ -1,9 +1,12 @@
-// backend/models/Order.js
 import mongoose from "mongoose";
 
 const orderItemSchema = new mongoose.Schema(
   {
-    product: { type: mongoose.Schema.Types.ObjectId, ref: "Product" }, // product reference
+    productId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Product",
+      required: true,
+    },
     name: String,
     brand: String,
     price: Number,
@@ -12,13 +15,17 @@ const orderItemSchema = new mongoose.Schema(
     quantity: { type: Number, default: 1 },
     image: String,
   },
-  { _id: false } // we don't need separate _id for each item
+  { _id: false }
 );
 
 const orderSchema = new mongoose.Schema(
   {
-    // 🔐 link order to logged-in user
-    user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    // 🔐 Logged-in user
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
 
     customer: {
       name: String,
@@ -26,23 +33,42 @@ const orderSchema = new mongoose.Schema(
       address: String,
       city: String,
       pincode: String,
+      email: String,
     },
 
-    // items in this order
     items: [orderItemSchema],
 
-    paymentMethod: { type: String, default: "Cash on Delivery" },
+    paymentMethod: {
+      type: String,
+      enum: ["UPI"],
+      default: "UPI",
+    },
 
-    // price breakup (same as in Checkout)
+    // 💰 Price breakup
     subtotal: Number,
     deliveryFee: Number,
     platformFee: Number,
     total: Number,
 
+    // 🔁 PAYMENT + ORDER STATUS
     status: {
       type: String,
-      enum: ["Placed", "In Progress", "Completed", "Cancelled"],
-      default: "Placed",
+      enum: [
+        "payment pending", // order created, payment not done
+        "paid",            // payment success
+        "in progress",     // admin processing
+        "completed",       // delivered
+        "cancelled",       // cancelled by user/admin
+        "failed",          // payment failed
+      ],
+      default: "payment pending",
+    },
+
+    // 🔐 Razorpay info (after payment)
+    paymentInfo: {
+      razorpay_order_id: String,
+      razorpay_payment_id: String,
+      razorpay_signature: String,
     },
   },
   { timestamps: true }

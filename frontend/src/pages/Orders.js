@@ -74,76 +74,90 @@ const getStatus = (item) => {
     item.serviceStatus ||
     "";
 
-  const s = raw.toString().toLowerCase().trim();
+  const s = raw.toLowerCase().trim();
 
-  // 💰 PAYMENT STATES
-  if (["pending payment", "payment pending"].includes(s)) {
-    return "Pending Payment";
+  // 🛒 ORDERS
+  if (item._type === "order") {
+    if (["payment pending", "pending payment"].includes(s))
+      return "Payment Pending";
+
+    if (["failed", "payment failed"].includes(s))
+      return "Failed";
+
+    if (["paid", "payment success", "payment completed"].includes(s))
+      return "Paid";
+
+    if (["processing", "shipped", "in progress"].includes(s))
+      return "In Progress";
+
+    if (["completed", "delivered"].includes(s))
+      return "Completed";
+
+    if (["cancelled", "canceled"].includes(s))
+      return "Cancelled";
   }
 
-  if (["paid", "payment success", "payment completed"].includes(s)) {
-    return "Paid";
+  // 🛠 SERVICES (NO payment)
+  if (item._type === "service") {
+    if (["new", "open", "assigned", "in progress"].includes(s))
+      return "In Progress";
+
+    if (["completed", "resolved", "closed"].includes(s))
+      return "Completed";
+
+    if (["cancelled", "canceled"].includes(s))
+      return "Cancelled";
   }
 
-  // 📦 PLACED (after payment)
-  if (["placed"].includes(s)) {
-    return "Placed";
-  }
-
-  // 🔄 IN PROGRESS
-  if (
-    ["new", "pending", "processing", "assigned", "open", "in progress"].includes(s)
-  ) {
-    return "In Progress";
-  }
-
-  // ✅ COMPLETED
-  if (["completed", "done", "closed", "resolved"].includes(s)) {
-    return "Completed";
-  }
-
-  // ❌ CANCELLED
-  if (["cancelled", "canceled"].includes(s)) {
-    return "Cancelled";
-  }
-
-  // fallback
-  return "Placed";
+  return "In Progress";
 };
 
 
   // ---------- Status filter ----------
   const matchesStatusFilter = (item) => {
-    const status = getStatus(item);
-    const s = status.toLowerCase();
+    const status = getStatus(item).toLowerCase();
 
     if (statusFilter === "all") return true;
-    if (statusFilter === "active")
-      return s === "placed" || s === "in progress";
-    if (statusFilter === "completed") return s === "completed";
-    if (statusFilter === "cancelled") return s === "cancelled";
+
+    if (statusFilter === "active") {
+      return status === "paid" || status === "in progress";
+    }
+
+    if (statusFilter === "completed") {
+      return status === "completed";
+    }
+
+    if (statusFilter === "cancelled") {
+      return status === "cancelled";
+    }
+
+    if (statusFilter === "failed") {
+      return status === "failed";
+    }
 
     return true;
   };
 
-  const downloadInvoice = async (orderId) => {
-  try {
-    const res = await api.get(`/orders/${orderId}/invoice`, {
-      responseType: "blob",
-    });
 
-    const blob = new Blob([res.data], { type: "application/pdf" });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `invoice_${orderId}.pdf`;
-    a.click();
-    window.URL.revokeObjectURL(url);
-  } catch (err) {
-    console.error("Invoice download failed:", err);
-    alert("Failed to download invoice");
-  }
-};
+
+//   const downloadInvoice = async (orderId) => {
+//   try {
+//     const res = await api.get(`/orders/${orderId}/invoice`, {
+//       responseType: "blob",
+//     });
+
+//     const blob = new Blob([res.data], { type: "application/pdf" });
+//     const url = window.URL.createObjectURL(blob);
+//     const a = document.createElement("a");
+//     a.href = url;
+//     a.download = `invoice_${orderId}.pdf`;
+//     a.click();
+//     window.URL.revokeObjectURL(url);
+//   } catch (err) {
+//     console.error("Invoice download failed:", err);
+//     alert("Failed to download invoice");
+//   }
+// };
   // ---------- Build combined list ----------
 const combined = [
   ...orders.map((o) => ({
@@ -170,38 +184,33 @@ const combined = [
   });
 
   // ---------- Cancel handler ----------
-  const handleCancel = async (item) => {
-    const status = getStatus(item);
-    const s = status.toLowerCase();
+const handleCancel = async (item) => {
+  const status = getStatus(item).toLowerCase();
 
-    // only Placed can be cancelled
-    if (s !== "placed") return;
+  // ✅ Only PAID orders can be cancelled
+  if (item._type === "order" && status !== "paid") return;
 
-    if (!window.confirm("Are you sure you want to cancel this?")) return;
+  // ❌ Services cancelled via admin only (optional)
+  if (item._type === "service") return;
 
-    const key = item._type + "_" + item._uid;
-    setCancelLoadingId(key);
+  if (!window.confirm("Are you sure you want to cancel this order?")) return;
 
-    try {
-if (item._type === "order") {
-  await cancelOrder(item._uid);
-  setOrders((prev) =>
-    prev.map((o) =>
-      o._id === item._uid ? { ...o, status: "cancelled" } : o
-    )
-  );
-} else {
-  await cancelServiceRequest(item._uid);
-  setServiceRequests((prev) =>
-    prev.map((s) =>
-      s._id === item._uid ? { ...s, status: "cancelled" } : s
-    )
-  );
-}
-} finally {
-      setCancelLoadingId(null);
-    }
-  };
+  const key = `${item._type}_${item._uid}`;
+  setCancelLoadingId(key);
+
+  try {
+    await cancelOrder(item._uid);
+
+    setOrders((prev) =>
+      prev.map((o) =>
+        o._id === item._uid ? { ...o, status: "cancelled" } : o
+      )
+    );
+  } finally {
+    setCancelLoadingId(null);
+  }
+};
+
 
   // ---------- AUTH GUARD PLACEHOLDER ----------
 if (!user) {
@@ -291,6 +300,7 @@ if (!user) {
       <option value="active">Active</option>
       <option value="completed">Completed</option>
       <option value="cancelled">Cancelled</option>
+      <option value="failed">Failed</option>
     </select>
   </div>
 </div>
@@ -320,7 +330,7 @@ if (!user) {
       const status = getStatus(item);
       const s = status.toLowerCase();
 
-      const canCancel = s === "placed";
+      const canCancel = isOrder && s === "paid";
       const busy = cancelLoadingId === item._type + "_" + item._uid;
 
       const statusColorClass =

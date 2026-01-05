@@ -17,9 +17,9 @@ const mapCartItemsToOrderItems = (items = []) =>
     name: item.name,
     brand: item.brand,
     price: item.price,
-    finalPrice: item.finalPrice,
-    discount: item.discount,
-    quantity: item.quantity,
+    finalPrice: item.finalPrice ?? item.price,
+    discount: item.discount ?? 0,
+    quantity: item.quantity || 1,
     image: item.image || item.images?.[0] || "",
   }));
 
@@ -27,8 +27,17 @@ const mapCartItemsToOrderItems = (items = []) =>
  * Helper: build invoice HTML (used for email)
  */
 const buildInvoiceHtml = (order) => {
-  const { _id, customer, items, subtotal, deliveryFee, platformFee, total, paymentMethod, createdAt } =
-    order;
+  const {
+    _id,
+    customer,
+    items,
+    subtotal,
+    deliveryFee,
+    platformFee,
+    total,
+    paymentMethod,
+    createdAt,
+  } = order;
 
   const rows = items
     .map(
@@ -44,11 +53,11 @@ const buildInvoiceHtml = (order) => {
 
   return `
     <div style="font-family:Arial;">
-      <h2>SVM Mobiles – Invoice</h2>
+      <h2>Sri Vaari Mobiles – Invoice</h2>
       <p><strong>Order ID:</strong> #${String(_id).slice(-8)}</p>
       <p><strong>Date:</strong> ${new Date(createdAt).toLocaleString("en-IN")}</p>
 
-      <h3>Shipping Details</h3>
+      <h3>Delivery Details</h3>
       <p>
         ${customer.name}<br/>
         ${customer.address}<br/>
@@ -68,17 +77,17 @@ const buildInvoiceHtml = (order) => {
       <p>Subtotal: ₹${subtotal}</p>
       <p>Delivery: ${deliveryFee ? `₹${deliveryFee}` : "Free"}</p>
       <p>Platform Fee: ${platformFee ? `₹${platformFee}` : "Free"}</p>
-      <h3>Total: ₹${total}</h3>
+      <h3>Total Paid: ₹${total}</h3>
 
       <p>Payment Method: ${paymentMethod}</p>
-      <p>Thank you for shopping with us.</p>
+      <p>Thank you for shopping with Sri Vaari Mobiles.</p>
     </div>
   `;
 };
 
 /**
- * ✅ POST /api/orders
- * STEP 3.A – Order placed
+ * ✅ CREATE ORDER (Before Payment)
+ * POST /api/orders
  */
 router.post("/", protect, async (req, res) => {
   try {
@@ -102,45 +111,24 @@ router.post("/", protect, async (req, res) => {
       user: req.user.userId,
       customer,
       items: mappedItems,
-      paymentMethod: paymentMethod || "Cash on Delivery",
+      paymentMethod: paymentMethod || "UPI",
       subtotal,
       deliveryFee,
       platformFee,
       total,
-      status: "Placed",
+      status: "Payment Pending", // 🔑 KEY CHANGE
     });
 
-    const savedOrder = await Order.findById(order._id).lean();
-
-    const invoiceHtml = buildInvoiceHtml(savedOrder);
-
-    // 📧 Email to CUSTOMER
-    if (customer.email) {
-      await sendEmail({
-        to: customer.email,
-        subject: "Your Order Confirmation – SVM Mobiles",
-        html: invoiceHtml,
-      });
-    }
-
-    // 📧 Email to ADMIN
-    if (process.env.ADMIN_EMAIL) {
-      await sendEmail({
-        to: process.env.ADMIN_EMAIL,
-        subject: `New Order Placed – #${String(order._id).slice(-8)}`,
-        html: invoiceHtml,
-      });
-    }
-
-    res.status(201).json(savedOrder);
+    res.status(201).json(order);
   } catch (err) {
-    console.error("Order create error:", err);
-    res.status(500).json({ message: "Server error while creating order" });
+    console.error("Create order error:", err);
+    res.status(500).json({ message: "Failed to create order" });
   }
 });
 
 /**
- * ✅ GET /api/orders/my
+ * ✅ GET MY ORDERS (Customer)
+ * GET /api/orders/my
  */
 router.get("/my", protect, async (req, res) => {
   const orders = await Order.find({ user: req.user.userId })
@@ -150,7 +138,8 @@ router.get("/my", protect, async (req, res) => {
 });
 
 /**
- * ✅ GET /api/orders (Admin)
+ * ✅ GET ALL ORDERS (Admin)
+ * GET /api/orders
  */
 router.get("/", protect, async (req, res) => {
   const orders = await Order.find().sort({ createdAt: -1 }).lean();
@@ -158,12 +147,21 @@ router.get("/", protect, async (req, res) => {
 });
 
 /**
- * ✅ PATCH /api/orders/:id/status
+ * ✅ UPDATE ORDER STATUS
+ * PATCH /api/orders/:id/status
  */
 router.patch("/:id/status", protect, async (req, res) => {
   try {
     const { status } = req.body;
-    const allowed = ["Placed", "In Progress", "Completed", "Cancelled"];
+
+    const allowed = [
+      "Payment Pending",
+      "Paid",
+      "In Progress",
+      "Completed",
+      "Cancelled",
+      "Failed",
+    ];
 
     if (!allowed.includes(status)) {
       return res.status(400).json({ message: "Invalid status" });
@@ -175,36 +173,37 @@ router.patch("/:id/status", protect, async (req, res) => {
     }
 
     const previousStatus = order.status;
-
-    // 🔒 CUSTOMER rules
     const isCustomer = req.user.role !== "admin";
+
+    // 🔒 CUSTOMER RULES
     if (isCustomer) {
       if (status !== "Cancelled") {
         return res.status(403).json({ message: "Not allowed" });
       }
-      if (order.status !== "Placed") {
+
+      if (order.status !== "Paid") {
         return res
           .status(400)
-          .json({ message: "Order cannot be cancelled now" });
+          .json({ message: "Only paid orders can be cancelled" });
       }
+
       if (order.user.toString() !== req.user.userId) {
         return res.status(403).json({ message: "Not your order" });
       }
     }
 
-    // ✅ Update status
     order.status = status;
     await order.save();
 
-    const orderIdShort = String(order._id).slice(-8);
+    const shortId = String(order._id).slice(-8);
 
-    // ===== CUSTOMER SMS NOTIFICATIONS =====
+    // 🔔 STATUS NOTIFICATIONS
 
-    // Placed → In Progress
-    if (previousStatus === "Placed" && status === "In Progress") {
+    // Paid → In Progress
+    if (previousStatus === "Paid" && status === "In Progress") {
       await sendSms({
         to: order.customer.phone,
-        message: `Your order #${orderIdShort} is now being processed. Our team is working on it.`,
+        message: `Your order #${shortId} is now being processed.`,
       });
     }
 
@@ -212,55 +211,36 @@ router.patch("/:id/status", protect, async (req, res) => {
     if (previousStatus === "In Progress" && status === "Completed") {
       await sendSms({
         to: order.customer.phone,
-        message: `Your order #${orderIdShort} has been completed. Thank you for shopping with us.`,
+        message: `Your order #${shortId} has been delivered. Thank you!`,
       });
-
-      // Optional: email completion note (invoice already sent earlier)
-      if (order.customer?.email) {
-        await sendEmail({
-          to: order.customer.email,
-          subject: `Order Completed – #${orderIdShort}`,
-          html: `
-            <p>Your order <strong>#${orderIdShort}</strong> has been completed.</p>
-            <p>Thank you for choosing us.</p>
-          `,
-        });
-      }
     }
 
-    // Any → Cancelled (customer OR admin)
-    if (status === "Cancelled" && previousStatus !== "Cancelled") {
+    // Any → Cancelled
+    if (status === "Cancelled") {
       await sendSms({
         to: order.customer.phone,
-        message: `Your order #${orderIdShort} has been cancelled. If you have questions, please contact support.`,
-      });
-
-      await sendEmail({
-        to: process.env.ADMIN_EMAIL,
-        subject: `❌ Order Cancelled – #${orderIdShort}`,
-        html: `
-          <p>An order has been cancelled.</p>
-          <p><strong>Order ID:</strong> #${orderIdShort}</p>
-          <p><strong>Customer:</strong> ${order.customer?.name}</p>
-          <p><strong>Phone:</strong> ${order.customer?.phone}</p>
-        `,
+        message: `Your order #${shortId} has been cancelled.`,
       });
     }
 
     res.json(order);
   } catch (err) {
     console.error("Update order status error:", err);
-    res.status(500).json({ message: "Server error updating order status" });
+    res.status(500).json({ message: "Failed to update order status" });
   }
 });
 
-
 /**
- * ✅ GET /api/orders/:id/invoice
+ * ✅ DOWNLOAD INVOICE (Paid orders only)
+ * GET /api/orders/:id/invoice
  */
 router.get("/:id/invoice", protect, async (req, res) => {
   const order = await Order.findById(req.params.id).lean();
   if (!order) return res.status(404).json({ message: "Order not found" });
+
+  if (order.status !== "Paid" && order.status !== "Completed") {
+    return res.status(400).json({ message: "Invoice not available yet" });
+  }
 
   generateInvoicePdf(order, res);
 });

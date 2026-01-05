@@ -3,7 +3,6 @@ import crypto from "crypto";
 import Order from "../models/Order.js";
 import sendEmail from "../utils/sendEmail.js";
 
-
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
   key_secret: process.env.RAZORPAY_KEY_SECRET,
@@ -11,12 +10,23 @@ const razorpay = new Razorpay({
 
 // ---------------- CREATE RAZORPAY ORDER ----------------
 export const createPaymentOrder = async (req, res) => {
-    console.log("➡️ Payment create called", req.body);
   try {
     const { amount, orderId } = req.body;
 
     if (!amount || !orderId) {
       return res.status(400).json({ message: "Amount and orderId required" });
+    }
+
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    // Prevent re-payment
+    if (order.status !== "payment pending") {
+      return res.status(400).json({
+        message: `Cannot pay for order with status ${order.status}`,
+      });
     }
 
     const options = {
@@ -48,12 +58,23 @@ export const verifyPayment = async (req, res) => {
       orderId,
     } = req.body;
 
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    // ❌ If any payment detail missing → FAILED
     if (
       !razorpay_order_id ||
       !razorpay_payment_id ||
       !razorpay_signature
     ) {
-      return res.status(400).json({ message: "Payment details missing" });
+      order.status = "failed";
+      await order.save();
+
+      return res.status(400).json({
+        message: "Payment failed or cancelled",
+      });
     }
 
     // 🔐 Verify signature
@@ -64,17 +85,18 @@ export const verifyPayment = async (req, res) => {
       .update(sign)
       .digest("hex");
 
+    // ❌ Signature mismatch → FAILED
     if (expectedSignature !== razorpay_signature) {
-      return res.status(400).json({ message: "Invalid payment signature" });
+      order.status = "failed";
+      await order.save();
+
+      return res.status(400).json({
+        message: "Invalid payment signature",
+      });
     }
 
-    // ✅ Update order status
-    const order = await Order.findById(orderId);
-    if (!order) {
-      return res.status(404).json({ message: "Order not found" });
-    }
-
-    order.status = "Paid";
+    // ✅ SUCCESS
+    order.status = "paid";
     order.paymentInfo = {
       razorpay_order_id,
       razorpay_payment_id,
@@ -83,14 +105,14 @@ export const verifyPayment = async (req, res) => {
 
     await order.save();
 
-    // 📧 SEND EMAIL AFTER PAYMENT SUCCESS
+    // 📧 SEND EMAIL ONLY AFTER SUCCESS
     if (order.customer?.email) {
       await sendEmail({
         to: order.customer.email,
         subject: "Order Confirmed – Sri Vaari Mobiles 🛒",
         html: `
           <h2>Hello ${order.customer.name || "Customer"}</h2>
-          <p>Your payment was successful and your order is confirmed.</p>
+          <p>Your payment was <strong>successful</strong> and your order is confirmed.</p>
 
           <p><strong>Order ID:</strong> ${order._id}</p>
           <p><strong>Payment ID:</strong> ${razorpay_payment_id}</p>
@@ -101,9 +123,22 @@ export const verifyPayment = async (req, res) => {
       });
     }
 
-    res.json({ success: true, message: "Payment verified successfully" });
+    res.json({
+      success: true,
+      message: "Payment verified successfully",
+    });
   } catch (err) {
     console.error("Verify payment error:", err);
-    res.status(500).json({ message: "Payment verification failed" });
+
+    // Safety fallback
+    if (req.body?.orderId) {
+      await Order.findByIdAndUpdate(req.body.orderId, {
+        status: "failed",
+      });
+    }
+
+    res.status(500).json({
+      message: "Payment verification failed",
+    });
   }
 };

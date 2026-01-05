@@ -60,10 +60,9 @@ export default function Checkout() {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
-
 const handlePlaceOrder = async (e) => {
   e.preventDefault();
-  if (isEmpty) return;
+  if (isEmpty || placing) return;
 
   const { name, phone, address, city, pincode } = form;
 
@@ -74,11 +73,6 @@ const handlePlaceOrder = async (e) => {
 
   if (!window.Razorpay) {
     alert("Razorpay SDK not loaded");
-    return;
-  }
-
-  if (!process.env.REACT_APP_RAZORPAY_KEY_ID) {
-    alert("Payment configuration error");
     return;
   }
 
@@ -94,7 +88,7 @@ const handlePlaceOrder = async (e) => {
       email: user.email,
     };
 
-    // 1️⃣ Create order in DB (Pending Payment)
+    // 1️⃣ Create order (Payment Pending)
     const order = await createOrderApi({
       customer,
       paymentMethod: "UPI",
@@ -105,13 +99,13 @@ const handlePlaceOrder = async (e) => {
       items: cartItems,
     });
 
-    // 2️⃣ Create Razorpay order (backend)
+    // 2️⃣ Create Razorpay order
     const razorpayOrder = await createPaymentOrderApi({
       amount: grandTotal,
       orderId: order._id,
     });
 
-    // 3️⃣ Open Razorpay popup
+    // 3️⃣ Razorpay options
     const options = {
       key: process.env.REACT_APP_RAZORPAY_KEY_ID,
       amount: razorpayOrder.amount,
@@ -121,24 +115,68 @@ const handlePlaceOrder = async (e) => {
       order_id: razorpayOrder.razorpayOrderId,
 
       handler: async (response) => {
-        await verifyPaymentApi({
-          ...response,
-          orderId: order._id,
-        });
+        try {
+          const res = await verifyPaymentApi({
+            ...response,
+            orderId: order._id,
+          });
 
-        clearCart();
-        navigate("/order-success", { state: { order } });
+          if (res?.success) {
+            clearCart();
+            navigate("/order-success", {
+              state: { orderId: order._id },
+            });
+          } else {
+            alert("Payment verification failed");
+          }
+        } catch (err) {
+          alert("Payment verification error");
+        }
+      },
+
+      modal: {
+        ondismiss: async () => {
+          // ❌ User closed payment popup
+          await fetch(
+            `${process.env.REACT_APP_API_URL}/orders/${order._id}/status`,
+            {
+              method: "PATCH",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+              },
+              body: JSON.stringify({ status: "Failed" }),
+            }
+          );
+        },
       },
 
       theme: { color: "#111827" },
     };
 
     const rzp = new window.Razorpay(options);
-    rzp.open();
 
+    // ❌ Payment failed event
+    rzp.on("payment.failed", async () => {
+      await fetch(
+        `${process.env.REACT_APP_API_URL}/orders/${order._id}/status`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify({ status: "Failed" }),
+        }
+      );
+
+      alert("Payment failed. Please try again.");
+    });
+
+    rzp.open();
   } catch (err) {
-    console.error("Payment error:", err);
-    alert("Payment failed. Please try again.");
+    console.error("Checkout error:", err);
+    alert("Something went wrong. Please try again.");
   } finally {
     setPlacing(false);
   }
