@@ -1,4 +1,3 @@
-// src/pages/AdminOrdersPage.js
 import React, { useEffect, useState } from "react";
 import { getOrdersApi, updateOrderStatusApi } from "../services/api";
 
@@ -9,10 +8,10 @@ export default function AdminOrdersPage() {
   const [loading, setLoading] = useState(false);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 6; // pagination size
+  const pageSize = 6;
 
   // ------------------------------
-  // Load all orders
+  // Load Orders
   // ------------------------------
   useEffect(() => {
     fetchOrders();
@@ -30,39 +29,31 @@ export default function AdminOrdersPage() {
     }
   };
 
-  // Format ₹
+  // ------------------------------
+  // Helpers
+  // ------------------------------
   const formatINR = (num = 0) =>
     Number(num).toLocaleString("en-IN", { maximumFractionDigits: 2 });
 
   // ------------------------------
-  // Confirm popup for cancelling
+  // Update Status
   // ------------------------------
   const handleStatusChange = async (orderId, newStatus) => {
     const order = orders.find((o) => o._id === orderId);
     if (!order) return;
 
-    // CONFIRM CANCEL
-    if (newStatus === "Cancelled") {
-      const ok = window.confirm(
-        "Are you sure you want to cancel this order? This cannot be undone."
-      );
+    if (newStatus === "CANCELLED") {
+      const ok = window.confirm("Cancel this order?");
       if (!ok) return;
     }
 
-    // UPDATE STATUS
     try {
       const updated = await updateOrderStatusApi(orderId, newStatus);
-
-      // Update state
       setOrders((prev) =>
         prev.map((o) => (o._id === orderId ? updated : o))
       );
-
-      // Auto-refresh after update
-      await fetchOrders();
     } catch (err) {
-      console.error("Status update failed:", err);
-      alert("Failed to update status");
+      alert("Status update failed");
     }
   };
 
@@ -70,7 +61,7 @@ export default function AdminOrdersPage() {
   // Filters
   // ------------------------------
   const filteredOrders = orders.filter((o) => {
-    const q = search.trim().toLowerCase();
+    const q = search.toLowerCase().trim();
 
     const matchesSearch =
       !q ||
@@ -78,9 +69,9 @@ export default function AdminOrdersPage() {
       o.customer?.name?.toLowerCase().includes(q) ||
       o.customer?.phone?.toLowerCase().includes(q);
 
-    const status = (o.status || "Placed").toLowerCase();
+    const status = (o.status || "").toLowerCase();
     const matchesStatus =
-      statusFilter === "all" || status === statusFilter.toLowerCase();
+      statusFilter === "all" || status === statusFilter;
 
     return matchesSearch && matchesStatus;
   });
@@ -88,10 +79,7 @@ export default function AdminOrdersPage() {
   // ------------------------------
   // Pagination
   // ------------------------------
-  const totalPages =
-    filteredOrders.length === 0
-      ? 1
-      : Math.ceil(filteredOrders.length / pageSize);
+  const totalPages = Math.max(1, Math.ceil(filteredOrders.length / pageSize));
 
   useEffect(() => {
     setCurrentPage(1);
@@ -103,333 +91,159 @@ export default function AdminOrdersPage() {
     startIndex + pageSize
   );
 
-  const handlePrev = () =>
-    setCurrentPage((p) => (p > 1 ? p - 1 : p));
-
-  const handleNext = () =>
-    setCurrentPage((p) => (p < totalPages ? p + 1 : p));
-
   // ------------------------------
-  // Status pill colors
+  // Status badge color
   // ------------------------------
-const statusBadgeClass = (status) => {
-  if (!status) return "badge bg-secondary";
-
-  switch (status) {
-    case "COMPLETED":
-      return "badge bg-success-subtle text-success";
-    case "CANCELLED":
-      return "badge bg-danger-subtle text-danger";
-    case "FAILED":
-      return "badge bg-danger-subtle text-danger";
-    case "RETURNED":
-      return "badge bg-warning-subtle text-warning";
-    case "REFUND_PROCESSING":
-      return "badge bg-info-subtle text-info";
-    case "REFUNDED":
-      return "badge bg-success-subtle text-success";
-    case "IN_PROGRESS":
-      return "badge bg-warning-subtle text-warning";
-    case "PAID":
-      return "badge bg-primary-subtle text-primary";
-    default:
-      return "badge bg-secondary-subtle text-secondary";
-  }
-};
-
+  const statusBadgeClass = (status) => {
+    switch (status) {
+      case "COMPLETED":
+        return "badge bg-success";
+      case "CANCELLED":
+      case "FAILED":
+        return "badge bg-danger";
+      case "RETURNED":
+        return "badge bg-warning text-dark";
+      case "REFUND_PROCESSING":
+        return "badge bg-info";
+      case "REFUNDED":
+        return "badge bg-success";
+      case "PAID":
+        return "badge bg-primary";
+      case "IN_PROGRESS":
+        return "badge bg-warning text-dark";
+      default:
+        return "badge bg-secondary";
+    }
+  };
 
   // ------------------------------
   // UI
   // ------------------------------
-
   return (
-    <div className="adm-page">
-      <div className="adm-inner">
+    <div className="container mt-4">
+      <h3 className="fw-bold mb-3">Admin · Orders</h3>
 
-        {/* HEADER */}
-        <div className="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
-          <div>
-            <h3 className="fw-bold mb-1">Admin · Orders</h3>
-            <small className="text-muted">
-              {filteredOrders.length} order(s) matched
-            </small>
-          </div>
+      {/* Filters */}
+      <div className="d-flex gap-2 mb-3">
+        <input
+          className="form-control form-control-sm"
+          placeholder="Search by name / phone / order id"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
 
-          <div className="d-flex flex-wrap align-items-center gap-2">
-            <input
-              type="text"
-              className="form-control form-control-sm"
-              style={{ minWidth: 230 }}
-              placeholder="Search by name / phone / id"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+        <select
+          className="form-select form-select-sm"
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+        >
+          <option value="all">All</option>
+          <option value="payment_pending">Payment Pending</option>
+          <option value="paid">Paid</option>
+          <option value="in_progress">In Progress</option>
+          <option value="completed">Completed</option>
+          <option value="cancelled">Cancelled</option>
+          <option value="returned">Returned</option>
+          <option value="refund_processing">Refund Processing</option>
+          <option value="refunded">Refunded</option>
+          <option value="failed">Failed</option>
+        </select>
 
-            {/* Status filter */}
-            <select
-              className="form-select form-select-sm mb-1"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <option value="all">All</option>
-              <option value="payment_pending">Payment Pending</option>
-              <option value="paid">Paid</option>
-              <option value="in_progress">In Progress</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
-              <option value="returned">Returned</option>
-              <option value="refund_processing">Refund Processing</option>
-              <option value="refunded">Refunded</option>
-              <option value="failed">Failed</option>
-            </select>
+        <button className="btn btn-sm btn-outline-secondary" onClick={fetchOrders}>
+          Refresh
+        </button>
+      </div>
 
-
-            <button
-              className="btn btn-outline-secondary btn-sm"
-              onClick={fetchOrders}
-            >
-              Refresh
-            </button>
-          </div>
-        </div>
-
-        {loading ? (
-          <div className="text-center mt-4">
-            <div className="spinner-border spinner-border-sm me-2" />
-            Loading…
-          </div>
-        ) : (
-          <>
-            {/* GRID */}
-            <div className="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3">
-              {paginatedOrders.map((order) => {
-                const createdAt = order.createdAt
-                  ? new Date(order.createdAt).toLocaleString("en-IN", {
-                      dateStyle: "medium",
-                      timeStyle: "short",
-                    })
-                  : "-";
-
-                const itemsCount =
-                  order.items?.reduce(
-                    (sum, it) => sum + (it.quantity || 0),
-                    0
-                  ) || 0;
-
-                return (
-                  <div className="col" key={order._id}>
-                    <div className="card h-100 border-0 shadow-sm rounded-4">
-                      <div className="card-body d-flex flex-column">
-
-                        {/* Top row */}
-                        <div className="d-flex justify-content-between align-items-start mb-2">
-                          <div>
-                            <div className="text-muted small">Order ID</div>
-                            <div className="fw-semibold">
-                              #{String(order._id).slice(-8)}
-                            </div>
-                            <div className="text-muted small">{createdAt}</div>
-                          </div>
-
-                          <div className="text-end">
-                            {/* STATUS DROPDOWN */}
-                            <select
-                              className="form-select form-select-sm"
-                              value={order.status}
-                              onChange={(e) =>
-                                handleStatusChange(order._id, e.target.value)
-                              }
-                            >
-                              <option value="PAYMENT_PENDING">Payment Pending</option>
-                              <option value="PAID">Paid</option>
-                              <option value="IN_PROGRESS">In Progress</option>
-                              <option value="COMPLETED">Completed</option>
-                              <option value="CANCELLED">Cancelled</option>
-                              <option value="RETURNED">Returned</option>
-                              <option value="REFUND_PROCESSING">Refund Processing</option>
-                              <option value="REFUNDED">Refunded</option>
-                              <option value="FAILED">Failed</option>
-                            </select>
-
-
-                            {/* STATUS PILL */}
-                            <span
-                              className={`${statusBadgeClass(order.status)} mb-1`}
-                              style={{ fontSize: "0.7rem" }}
-                            >
-                              {order.status}
-                            </span>
-
-                            <div className="small text-muted mt-1">
-                              Items: {itemsCount}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Middle: payment + total */}
-                        <div className="d-flex justify-content-between align-items-center mb-2">
-                          <div>
-                            <div className="small text-muted">Total</div>
-                            <div className="fw-bold">
-                              ₹{formatINR(order.total)}
-                            </div>
-                          </div>
-                          <div className="text-end small text-muted">
-                            <div className="fw-semibold text-dark">Payment</div>
-                            <div>{order.paymentMethod}</div>
-                          </div>
-                        </div>
-
-                        <hr className="my-2" />
-
-                        {/* Customer info */}
-                        <div className="small text-muted mb-2">
-                          <div className="fw-semibold text-dark mb-1">
-                            Customer
-                          </div>
-                          <div>{order.customer?.name}</div>
-                          <div>Phone: {order.customer?.phone}</div>
-                          <div className="text-truncate">
-                            {order.customer?.address},{" "}
-                            {order.customer?.city} - {order.customer?.pincode}
-                          </div>
-                        </div>
-
-                        {/* Admin Actions */}
-                        {(order.status === "CANCELLED" || order.status === "RETURNED") && (
-                          <button
-                            className="btn btn-sm btn-danger w-100 mb-2"
-                            onClick={async () => {
-                              const ok = window.confirm("Process refund for this order?");
-                              if (!ok) return;
-
-                              try {
-                                await fetch(
-                                  `${process.env.REACT_APP_API_URL}/orders/${order._id}/refund`,
-                                  {
-                                    method: "POST",
-                                    headers: {
-                                      Authorization: `Bearer ${localStorage.getItem("token")}`,
-                                    },
-                                  }
-                                );
-
-                                alert("Refund processed");
-                                fetchOrders();
-                              } catch (err) {
-                                alert("Refund failed");
-                              }
-                            }}
-                          >
-                            Process Refund
-                          </button>
-                        )}
-
-                        {order.status === "RETURNED" && (
-                          <button
-                            className="btn btn-sm btn-warning w-100 mb-2"
-                            onClick={() => handleStatusChange(order._id, "REFUND_PROCESSING")}
-                          >
-                            Mark Refund Processing
-                          </button>
-                        )}
-
-
-                        {/* Items preview */}
-                        {order.items?.length > 0 && (
-                          <div className="mt-auto pt-2 border-top small">
-                            <div className="fw-semibold text-dark mb-1">
-                              Items
-                            </div>
-
-                            {order.items.slice(0, 2).map((item, idx) => (
-                              <div
-                                key={idx}
-                                className="d-flex justify-content-between align-items-center mb-1"
-                              >
-                                <div className="d-flex align-items-center gap-2">
-                                  {item.image && (
-                                    <img
-                                      src={item.image}
-                                      alt={item.name}
-                                      style={{
-                                        width: 32,
-                                        height: 32,
-                                        objectFit: "cover",
-                                        borderRadius: 6,
-                                      }}
-                                    />
-                                  )}
-                                  <span className="text-truncate">
-                                    {item.name}
-                                  </span>
-                                </div>
-
-                                <span>
-                                  ×{item.quantity} · ₹{formatINR(item.price)}
-                                </span>
-                              </div>
-                            ))}
-
-                            {order.items.length > 2 && (
-                              <div className="text-muted">
-                                + {order.items.length - 2} more item(s)
-                              </div>
-                            )}
-                          </div>
-                        )}
+      {/* Orders */}
+      {loading ? (
+        <div className="text-center py-5">Loading…</div>
+      ) : (
+        <div className="row g-3">
+          {paginatedOrders.map((order) => (
+            <div className="col-md-6 col-lg-4" key={order._id}>
+              <div className="card shadow-sm rounded-4">
+                <div className="card-body">
+                  <div className="d-flex justify-content-between mb-2">
+                    <div>
+                      <div className="small text-muted">Order</div>
+                      <div className="fw-semibold">
+                        #{order._id.slice(-8)}
                       </div>
                     </div>
+                    <span className={statusBadgeClass(order.status)}>
+                      {order.status}
+                    </span>
                   </div>
-                );
-              })}
-            </div>
 
-            {/* PAGINATION */}
-            <div className="d-flex flex-wrap justify-content-between align-items-center mt-3">
-              <small className="text-muted">
-                Showing {startIndex + 1}–
-                {Math.min(startIndex + pageSize, filteredOrders.length)} of{" "}
-                {filteredOrders.length}
-              </small>
+                  <div className="small text-muted mb-2">
+                    {new Date(order.createdAt).toLocaleString("en-IN")}
+                  </div>
 
-              <ul className="pagination pagination-sm mb-0">
-                <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
-                  <button className="page-link" onClick={handlePrev}>
-                    Previous
-                  </button>
-                </li>
+                  <div className="mb-2">
+                    <b>{order.customer?.name}</b>
+                    <br />
+                    {order.customer?.phone}
+                  </div>
 
-                {Array.from({ length: totalPages }).map((_, idx) => (
-                  <li
-                    key={idx}
-                    className={`page-item ${
-                      currentPage === idx + 1 ? "active" : ""
-                    }`}
+                  <div className="mb-2">
+                    <b>Total:</b> ₹{formatINR(order.total)}
+                  </div>
+
+                  {/* Status Control */}
+                  <select
+                    className="form-select form-select-sm mb-2"
+                    value={order.status}
+                    onChange={(e) =>
+                      handleStatusChange(order._id, e.target.value)
+                    }
                   >
-                    <button
-                      className="page-link"
-                      onClick={() => setCurrentPage(idx + 1)}
-                    >
-                      {idx + 1}
-                    </button>
-                  </li>
-                ))}
+                    <option value="PAYMENT_PENDING">Payment Pending</option>
+                    <option value="PAID">Paid</option>
+                    <option value="IN_PROGRESS">In Progress</option>
+                    <option value="COMPLETED">Completed</option>
+                    <option value="CANCELLED">Cancelled</option>
+                    <option value="RETURNED">Returned</option>
+                    <option value="REFUND_PROCESSING">Refund Processing</option>
+                    <option value="REFUNDED">Refunded</option>
+                    <option value="FAILED">Failed</option>
+                  </select>
 
-                <li
-                  className={`page-item ${
-                    currentPage === totalPages ? "disabled" : ""
-                  }`}
-                >
-                  <button className="page-link" onClick={handleNext}>
-                    Next
-                  </button>
-                </li>
-              </ul>
+                  {(order.status === "CANCELLED" ||
+                    order.status === "RETURNED") && (
+                    <button
+                      className="btn btn-sm btn-danger w-100"
+                      onClick={async () => {
+                        const ok = window.confirm("Process refund?");
+                        if (!ok) return;
+
+                        try {
+                          await fetch(
+                            `${process.env.REACT_APP_API_URL}/orders/${order._id}/refund`,
+                            {
+                              method: "POST",
+                              headers: {
+                                Authorization: `Bearer ${localStorage.getItem(
+                                  "token"
+                                )}`,
+                              },
+                            }
+                          );
+                          alert("Refund processed");
+                          fetchOrders();
+                        } catch {
+                          alert("Refund failed");
+                        }
+                      }}
+                    >
+                      Process Refund
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
-          </>
-        )}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
