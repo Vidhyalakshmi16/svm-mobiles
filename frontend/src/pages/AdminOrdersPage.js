@@ -168,20 +168,21 @@ const statusBadgeClass = (status) => {
             {/* Status filter */}
             <select
               className="form-select form-select-sm mb-1"
-              value={order.status}
-              onChange={(e) =>
-                handleStatusChange(order._id, e.target.value)
-              }
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
             >
-              <option value="PAYMENT_PENDING">Payment Pending</option>
-              <option value="PAID">Paid</option>
-              <option value="IN_PROGRESS">In Progress</option>
-              <option value="COMPLETED">Completed</option>
-              <option value="CANCELLED">Cancelled</option>
-              <option value="RETURNED">Returned</option>
-              <option value="REFUND_PROCESSING">Refund Processing</option>
-              <option value="REFUNDED">Refunded</option>
+              <option value="all">All</option>
+              <option value="payment_pending">Payment Pending</option>
+              <option value="paid">Paid</option>
+              <option value="in_progress">In Progress</option>
+              <option value="completed">Completed</option>
+              <option value="cancelled">Cancelled</option>
+              <option value="returned">Returned</option>
+              <option value="refund_processing">Refund Processing</option>
+              <option value="refunded">Refunded</option>
+              <option value="failed">Failed</option>
             </select>
+
 
             <button
               className="btn btn-outline-secondary btn-sm"
@@ -234,19 +235,22 @@ const statusBadgeClass = (status) => {
                             {/* STATUS DROPDOWN */}
                             <select
                               className="form-select form-select-sm"
-                              value={statusFilter}
-                              onChange={(e) => setStatusFilter(e.target.value)}
+                              value={order.status}
+                              onChange={(e) =>
+                                handleStatusChange(order._id, e.target.value)
+                              }
                             >
-                              <option value="all">All</option>
-                              <option value="payment_pending">Payment Pending</option>
-                              <option value="paid">Paid</option>
-                              <option value="in_progress">In Progress</option>
-                              <option value="completed">Completed</option>
-                              <option value="cancelled">Cancelled</option>
-                              <option value="returned">Returned</option>
-                              <option value="refund_processing">Refund Processing</option>
-                              <option value="refunded">Refunded</option>
+                              <option value="PAYMENT_PENDING">Payment Pending</option>
+                              <option value="PAID">Paid</option>
+                              <option value="IN_PROGRESS">In Progress</option>
+                              <option value="COMPLETED">Completed</option>
+                              <option value="CANCELLED">Cancelled</option>
+                              <option value="RETURNED">Returned</option>
+                              <option value="REFUND_PROCESSING">Refund Processing</option>
+                              <option value="REFUNDED">Refunded</option>
+                              <option value="FAILED">Failed</option>
                             </select>
+
 
                             {/* STATUS PILL */}
                             <span
