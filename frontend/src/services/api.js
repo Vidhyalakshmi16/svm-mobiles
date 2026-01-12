@@ -6,13 +6,12 @@ const BASE_URL = "https://svm-mobiles.onrender.com/api"; // change if different
 
 // Orders
    // admin
-export const getMyOrdersApi = async () => {
-  const res = await api.get("/orders/my");
-  return res.data; // ✅ array of orders
-};
+// export const getMyOrdersApi = async () => {
+//   const res = await api.get("/orders/my");
+//   return res.data; // ✅ array of orders
+// };
   // customer
 // for admin dashboard
-
 
 
 // ---- OTHER APIs using normal axios + BASE_URL ----
@@ -74,10 +73,6 @@ export const getProductById = async (id) => {
 
 
 
-
-
-
-
 // ========= NEW FUNCTIONS FOR CUSTOMER ORDERS PAGE ========= //
 
 // For now this is same as getServiceRequests() without filter.
@@ -91,9 +86,6 @@ export const getProductById = async (id) => {
 export const forgotPasswordApi = (data) =>
   api.post("/auth/forgot-password", data);
 
-
-
-
 // ---------- AUTH ----------
 export const loginApi = (data) => api.post("/auth/login", data);
 export const registerApi = (data) => api.post("/auth/register", data);
@@ -103,38 +95,40 @@ export const getMeApi = () => api.get("/auth/me");
 
 // CUSTOMER: my orders
 // ADMIN: Get all orders (token required)
-export const getOrdersApi = async () => {
-  const res = await api.get("/orders");   // ✔ uses axiosInstance with token
+// ---------- ORDERS ----------
+
+// CUSTOMER: my orders
+export const getMyOrdersApi = async () => {
+  const res = await api.get("/orders/my");
   return res.data;
 };
 
-
-// ADMIN: all orders (for dashboard)
-export const getAllOrdersApi = async () => {
+// ADMIN: all orders
+export const getOrdersApi = async () => {
   const res = await api.get("/orders");
   return res.data;
 };
 
-// CREATE ORDER – must be logged in
+// Create order
 export const createOrderApi = async (payload) => {
-  const res = await api.post("/orders", payload); // 👈 use api, not axios
+  const res = await api.post("/orders", payload);
   return res.data;
 };
 
-
-
-// Update order status (admin OR for cancel)
+// Update order status (admin + cancel + return)
 export const updateOrderStatusApi = async (orderId, status) => {
   const res = await api.patch(`/orders/${orderId}/status`, { status });
   return res.data;
 };
 
+// Cancel order
 export const cancelOrder = async (id) => {
   const res = await api.patch(`/orders/${id}/status`, {
-    status: "Cancelled",
+    status: "CANCELLED",
   });
   return res.data;
 };
+
 
 // ---------- SERVICE REQUESTS ----------
 
@@ -174,13 +168,19 @@ export const cancelServiceRequest = async (id) => {
 
 // Create Razorpay order
 export const createPaymentOrderApi = async (data) => {
-  const res = await axios.post(`${BASE_URL}/payment/create`, data);
+  const res = await api.post("/payment/create", data);   // must use api
   return res.data;
 };
 
 // Verify Razorpay payment
 export const verifyPaymentApi = async (data) => {
-  const res = await axios.post(`${BASE_URL}/payment/verify`, data);
+  const res = await api.post("/payment/verify", data);   // must use api
+  return res.data;
+};
+
+// Retry failed payment
+export const retryPaymentApi = async (data) => {
+  const res = await api.post("/payment/retry", data);    // fixed route
   return res.data;
 };
 

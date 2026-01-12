@@ -8,6 +8,11 @@ import {
   cancelServiceRequest,
 } from "../services/api";
 import api from "../services/axiosInstance"; // the one with token
+import {
+  verifyPaymentApi,
+  retryPaymentApi
+} from "../services/api";
+
 
 import {
   FiSmartphone,
@@ -28,6 +33,7 @@ export default function Orders() {
   const [statusFilter, setStatusFilter] = useState("all"); // "all" | "active" | "completed" | "cancelled"
   const [loading, setLoading] = useState(false);
   const [cancelLoadingId, setCancelLoadingId] = useState(null);
+
 
   // ---------- Fetch data ----------
 useEffect(() => {
@@ -68,43 +74,38 @@ useEffect(() => {
 
   // ---------- Normalise status ----------
 const getStatus = (item) => {
-  const raw =
-    item.status ||
-    item.orderStatus ||
-    item.serviceStatus ||
-    "";
-
-  const s = raw.toLowerCase().trim();
-
-  // 🛒 ORDERS
   if (item._type === "order") {
-    if (["payment pending", "pending payment"].includes(s))
-      return "Payment Pending";
-
-    if (["failed", "payment failed"].includes(s))
-      return "Failed";
-
-    if (["paid", "payment success", "payment completed"].includes(s))
-      return "Paid";
-
-    if (["processing", "shipped", "in progress"].includes(s))
-      return "In Progress";
-
-    if (["completed", "delivered"].includes(s))
-      return "Completed";
-
-    if (["cancelled", "canceled"].includes(s))
-      return "Cancelled";
+    switch (item.status) {
+      case "PAYMENT_PENDING":
+        return "Payment Pending";
+      case "FAILED":
+        return "Failed";
+      case "PAID":
+        return "Paid";
+      case "IN_PROGRESS":
+        return "In Progress";
+      case "COMPLETED":
+        return "Completed";
+      case "CANCELLED":
+        return "Cancelled";
+      case "RETURNED":
+        return "Returned";
+      case "REFUND_PROCESSING":
+        return "Refund Processing";
+      case "REFUNDED":
+        return "Refunded";
+      default:
+        return item.status;
+    }
   }
 
-  // 🛠 SERVICES (NO payment)
+  // Services
   if (item._type === "service") {
-    if (["new", "open", "assigned", "in progress"].includes(s))
+    const s = (item.status || "").toLowerCase();
+    if (["new", "assigned", "open", "in progress"].includes(s))
       return "In Progress";
-
-    if (["completed", "resolved", "closed"].includes(s))
+    if (["completed", "closed", "resolved"].includes(s))
       return "Completed";
-
     if (["cancelled", "canceled"].includes(s))
       return "Cancelled";
   }
@@ -119,9 +120,14 @@ const getStatus = (item) => {
 
     if (statusFilter === "all") return true;
 
+    // if (statusFilter === "active") {
+    //   return status === "paid" || status === "in progress";
+    // }
+
     if (statusFilter === "active") {
-      return status === "paid" || status === "in progress";
-    }
+  return ["paid", "in progress", "failed", "payment pending"].includes(status);
+}
+
 
     if (statusFilter === "completed") {
       return status === "completed";
@@ -137,6 +143,41 @@ const getStatus = (item) => {
 
     return true;
   };
+
+  const retryPayment = async (orderId) => {
+  try {
+    const res = await retryPaymentApi({ orderId });
+
+    const options = {
+      key: process.env.REACT_APP_RAZORPAY_KEY_ID,
+      amount: res.amount,
+      currency: "INR",
+      order_id: res.razorpayOrderId,
+      name: "Sri Vaari Mobiles",
+      description: "Retry Order Payment",
+
+      handler: async (response) => {
+        const result = await verifyPaymentApi({
+          ...response,
+          orderId,
+        });
+
+        if (result) {
+          window.location.reload();
+        } else {
+          alert("Payment verification failed");
+        }
+      },
+
+      theme: { color: "#111827" },
+    };
+
+    new window.Razorpay(options).open();
+  } catch (err) {
+    alert(err.response?.data?.message || "Retry failed");
+  }
+};
+
 
 
 
@@ -203,7 +244,7 @@ const handleCancel = async (item) => {
 
     setOrders((prev) =>
       prev.map((o) =>
-        o._id === item._uid ? { ...o, status: "cancelled" } : o
+        o._id === item._uid ? { ...o, status: "CANCELLED" } : o
       )
     );
   } finally {
@@ -330,15 +371,21 @@ if (!user) {
       const status = getStatus(item);
       const s = status.toLowerCase();
 
-      const canCancel = isOrder && s === "paid";
+      const canCancel = isOrder && item.status === "PAID";
+      const canRetry = isOrder && ["PAYMENT_PENDING", "FAILED"].includes(item.status);
+      const canReturn = isOrder && item.status === "COMPLETED";
+
       const busy = cancelLoadingId === item._type + "_" + item._uid;
 
       const statusColorClass =
-        status === "Completed"
+        ["Completed", "Refunded"].includes(status)
           ? "status-pill success"
-          : status === "Cancelled"
+          : ["Cancelled", "Failed"].includes(status)
           ? "status-pill danger"
+          : ["Returned", "Refund Processing"].includes(status)
+          ? "status-pill warning"
           : "status-pill warning";
+
 
       return (
             <div className="col-12 col-md-6 col-lg-4" key={item._uid}>
@@ -509,6 +556,24 @@ if (!user) {
                 )}
 
                 <hr className="my-2" />
+
+                {canRetry && (
+                  <button
+                    className="btn btn-sm btn-warning rounded-pill"
+                    onClick={() => retryPayment(item._uid)}
+                  >
+                    Retry Payment
+                  </button>
+                )}
+
+                {canReturn && (
+                  <Link
+                    to={`/return/${item._uid}`}
+                    className="btn btn-sm btn-outline-primary rounded-pill ms-2"
+                  >
+                    Return Item
+                  </Link>
+                )}
 
                 {/* Footer actions */}
                 <div className="d-flex justify-content-between align-items-center mt-1">

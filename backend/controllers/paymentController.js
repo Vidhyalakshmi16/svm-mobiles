@@ -142,3 +142,43 @@ export const verifyPayment = async (req, res) => {
     });
   }
 };
+
+export const retryPayment = async (req, res) => {
+  try {
+    const { orderId } = req.body;
+
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    if (!["payment pending", "failed"].includes(order.status)) {
+      return res.status(400).json({
+        message: `Payment cannot be retried for status ${order.status}`,
+      });
+    }
+
+    const options = {
+      amount: order.total * 100,
+      currency: "INR",
+      receipt: `order_${orderId}`,
+    };
+
+    const razorpayOrder = await razorpay.orders.create(options);
+
+    // Reset order state
+    order.status = "payment pending";
+    order.paymentInfo = undefined;
+    await order.save();
+
+    res.json({
+      razorpayOrderId: razorpayOrder.id,
+      amount: razorpayOrder.amount,
+      currency: razorpayOrder.currency,
+    });
+  } catch (err) {
+    console.error("Retry payment error:", err);
+    res.status(500).json({ message: "Failed to retry payment" });
+  }
+};
+

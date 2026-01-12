@@ -50,21 +50,47 @@ const orderSchema = new mongoose.Schema(
     platformFee: Number,
     total: Number,
 
-    // 🔁 PAYMENT + ORDER STATUS
+    // 🔁 ORDER + REFUND STATUS
     status: {
       type: String,
       enum: [
-        "payment pending", // order created, payment not done
-        "paid",            // payment success
-        "in progress",     // admin processing
-        "completed",       // delivered
-        "cancelled",       // cancelled by user/admin
-        "failed",          // payment failed
+        "PAYMENT_PENDING",
+        "PAID",
+        "IN_PROGRESS",
+        "COMPLETED",
+        "CANCELLED",
+        "RETURNED",
+        "REFUND_PROCESSING",
+        "REFUNDED",
+        "FAILED"
       ],
-      default: "payment pending",
+      default: "PAYMENT_PENDING"
     },
 
-    // 🔐 Razorpay info (after payment)
+    // 💳 Razorpay IDs
+    // This will be filled AFTER payment success
+    razorpayPaymentId: {
+      type: String,
+      default: null
+    },
+
+    // This will be filled AFTER refund success
+    razorpayRefundId: {
+      type: String,
+      default: null
+    },
+
+    refundReason: {
+      type: String,
+      default: null
+    },
+
+    refundedAt: {
+      type: Date,
+      default: null
+    },
+
+    // 🔐 Razorpay verification data (existing – DO NOT BREAK)
     paymentInfo: {
       razorpay_order_id: String,
       razorpay_payment_id: String,

@@ -9,6 +9,8 @@ import {
   AiOutlineMenuUnfold,
 } from "react-icons/ai";
 import { AiOutlineMail } from "react-icons/ai";
+import { AiOutlineRollback } from "react-icons/ai";
+
 
 export default function AdminSidebar({ mobileOpen, onClose }) {
   const [collapsed, setCollapsed] = useState(false);
@@ -17,6 +19,7 @@ export default function AdminSidebar({ mobileOpen, onClose }) {
     { label: "Dashboard", to: "/admin/dashboard", icon: <AiOutlineDashboard /> },
     { label: "Products", to: "/admin/products", icon: <AiOutlineShop /> },
     { label: "Orders", to: "/admin/orders", icon: <AiOutlineShopping /> },
+    { label: "Returns", to: "/admin/returns", icon: <AiOutlineRollback /> },   // 👈 NEW
     { label: "Bulk Discount", to: "/admin/bulk-discount", icon: <AiOutlineGift /> },
     { label: "Service Requests", to: "/admin/service-requests", icon: <AiOutlineMail /> },
   ];

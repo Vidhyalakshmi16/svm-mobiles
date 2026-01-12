@@ -121,7 +121,7 @@ const handlePlaceOrder = async (e) => {
             orderId: order._id,
           });
 
-          if (res?.success) {
+          if (res) {
             clearCart();
             navigate("/order-success", {
               state: { orderId: order._id },
@@ -136,16 +136,14 @@ const handlePlaceOrder = async (e) => {
 
       modal: {
         ondismiss: async () => {
-          // ❌ User closed payment popup
           await fetch(
-            `${process.env.REACT_APP_API_URL}/orders/${order._id}/status`,
+            `${process.env.REACT_APP_API_URL}/orders/${order._id}/payment-failed`,
             {
-              method: "PATCH",
+              method: "POST",
               headers: {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${localStorage.getItem("token")}`,
               },
-              body: JSON.stringify({ status: "Failed" }),
             }
           );
         },
@@ -159,14 +157,13 @@ const handlePlaceOrder = async (e) => {
     // ❌ Payment failed event
     rzp.on("payment.failed", async () => {
       await fetch(
-        `${process.env.REACT_APP_API_URL}/orders/${order._id}/status`,
+        `${process.env.REACT_APP_API_URL}/orders/${order._id}/payment-failed`,
         {
-          method: "PATCH",
+          method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
-          body: JSON.stringify({ status: "Failed" }),
         }
       );
 

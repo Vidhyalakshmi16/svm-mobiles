@@ -112,13 +112,31 @@ export default function AdminOrdersPage() {
   // ------------------------------
   // Status pill colors
   // ------------------------------
-  const statusBadgeClass = (status) => {
-    const s = (status || "Placed").toLowerCase();
-    if (s === "completed") return "badge bg-success-subtle text-success";
-    if (s === "cancelled") return "badge bg-danger-subtle text-danger";
-    if (s === "in progress") return "badge bg-warning-subtle text-warning";
-    return "badge bg-primary-subtle text-primary"; // Placed
-  };
+const statusBadgeClass = (status) => {
+  if (!status) return "badge bg-secondary";
+
+  switch (status) {
+    case "COMPLETED":
+      return "badge bg-success-subtle text-success";
+    case "CANCELLED":
+      return "badge bg-danger-subtle text-danger";
+    case "FAILED":
+      return "badge bg-danger-subtle text-danger";
+    case "RETURNED":
+      return "badge bg-warning-subtle text-warning";
+    case "REFUND_PROCESSING":
+      return "badge bg-info-subtle text-info";
+    case "REFUNDED":
+      return "badge bg-success-subtle text-success";
+    case "IN_PROGRESS":
+      return "badge bg-warning-subtle text-warning";
+    case "PAID":
+      return "badge bg-primary-subtle text-primary";
+    default:
+      return "badge bg-secondary-subtle text-secondary";
+  }
+};
+
 
   // ------------------------------
   // UI
@@ -149,15 +167,20 @@ export default function AdminOrdersPage() {
 
             {/* Status filter */}
             <select
-              className="form-select form-select-sm"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              className="form-select form-select-sm mb-1"
+              value={order.status}
+              onChange={(e) =>
+                handleStatusChange(order._id, e.target.value)
+              }
             >
-              <option value="all">All Status</option>
-              <option value="placed">Placed</option>
-              <option value="in progress">In Progress</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
+              <option value="PAYMENT_PENDING">Payment Pending</option>
+              <option value="PAID">Paid</option>
+              <option value="IN_PROGRESS">In Progress</option>
+              <option value="COMPLETED">Completed</option>
+              <option value="CANCELLED">Cancelled</option>
+              <option value="RETURNED">Returned</option>
+              <option value="REFUND_PROCESSING">Refund Processing</option>
+              <option value="REFUNDED">Refunded</option>
             </select>
 
             <button
@@ -210,16 +233,19 @@ export default function AdminOrdersPage() {
                           <div className="text-end">
                             {/* STATUS DROPDOWN */}
                             <select
-                              className="form-select form-select-sm mb-1"
-                              value={order.status}
-                              onChange={(e) =>
-                                handleStatusChange(order._id, e.target.value)
-                              }
+                              className="form-select form-select-sm"
+                              value={statusFilter}
+                              onChange={(e) => setStatusFilter(e.target.value)}
                             >
-                              <option value="Placed">Placed</option>
-                              <option value="In Progress">In Progress</option>
-                              <option value="Completed">Completed</option>
-                              <option value="Cancelled">Cancelled</option>
+                              <option value="all">All</option>
+                              <option value="payment_pending">Payment Pending</option>
+                              <option value="paid">Paid</option>
+                              <option value="in_progress">In Progress</option>
+                              <option value="completed">Completed</option>
+                              <option value="cancelled">Cancelled</option>
+                              <option value="returned">Returned</option>
+                              <option value="refund_processing">Refund Processing</option>
+                              <option value="refunded">Refunded</option>
                             </select>
 
                             {/* STATUS PILL */}
@@ -264,6 +290,46 @@ export default function AdminOrdersPage() {
                             {order.customer?.city} - {order.customer?.pincode}
                           </div>
                         </div>
+
+                        {/* Admin Actions */}
+                        {(order.status === "CANCELLED" || order.status === "RETURNED") && (
+                          <button
+                            className="btn btn-sm btn-danger w-100 mb-2"
+                            onClick={async () => {
+                              const ok = window.confirm("Process refund for this order?");
+                              if (!ok) return;
+
+                              try {
+                                await fetch(
+                                  `${process.env.REACT_APP_API_URL}/orders/${order._id}/refund`,
+                                  {
+                                    method: "POST",
+                                    headers: {
+                                      Authorization: `Bearer ${localStorage.getItem("token")}`,
+                                    },
+                                  }
+                                );
+
+                                alert("Refund processed");
+                                fetchOrders();
+                              } catch (err) {
+                                alert("Refund failed");
+                              }
+                            }}
+                          >
+                            Process Refund
+                          </button>
+                        )}
+
+                        {order.status === "RETURNED" && (
+                          <button
+                            className="btn btn-sm btn-warning w-100 mb-2"
+                            onClick={() => handleStatusChange(order._id, "REFUND_PROCESSING")}
+                          >
+                            Mark Refund Processing
+                          </button>
+                        )}
+
 
                         {/* Items preview */}
                         {order.items?.length > 0 && (

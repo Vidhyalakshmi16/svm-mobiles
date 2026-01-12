@@ -5,6 +5,8 @@ import { protect } from "../middleware/authMiddleware.js";
 import sendEmail from "../utils/sendEmail.js";
 import sendSms from "../utils/message.js";
 import generateInvoicePdf from "../utils/generateInvoicePdf.js";
+import { refundPayment } from "../utils/razorpay.js";
+
 
 const router = express.Router();
 
@@ -13,7 +15,7 @@ const router = express.Router();
  */
 const mapCartItemsToOrderItems = (items = []) =>
   items.map((item) => ({
-    product: item._id,
+    productId: item._id,
     name: item.name,
     brand: item.brand,
     price: item.price,
@@ -116,7 +118,7 @@ router.post("/", protect, async (req, res) => {
       deliveryFee,
       platformFee,
       total,
-      status: "Payment Pending", // 🔑 KEY CHANGE
+      status: "PAYMENT_PENDING", // 🔑 KEY CHANGE
     });
 
     res.status(201).json(order);
@@ -155,13 +157,17 @@ router.patch("/:id/status", protect, async (req, res) => {
     const { status } = req.body;
 
     const allowed = [
-      "Payment Pending",
-      "Paid",
-      "In Progress",
-      "Completed",
-      "Cancelled",
-      "Failed",
+      "PAYMENT_PENDING",
+      "PAID",
+      "IN_PROGRESS",
+      "COMPLETED",
+      "CANCELLED",
+      "FAILED",
+      "RETURNED",
+      "REFUND_PROCESSING",
+      "REFUNDED"
     ];
+
 
     if (!allowed.includes(status)) {
       return res.status(400).json({ message: "Invalid status" });
@@ -177,11 +183,11 @@ router.patch("/:id/status", protect, async (req, res) => {
 
     // 🔒 CUSTOMER RULES
     if (isCustomer) {
-      if (status !== "Cancelled") {
+      if (status !== "CANCELLED") {
         return res.status(403).json({ message: "Not allowed" });
       }
 
-      if (order.status !== "Paid") {
+      if (order.status !== "PAID") {
         return res
           .status(400)
           .json({ message: "Only paid orders can be cancelled" });
@@ -200,7 +206,7 @@ router.patch("/:id/status", protect, async (req, res) => {
     // 🔔 STATUS NOTIFICATIONS
 
     // Paid → In Progress
-    if (previousStatus === "Paid" && status === "In Progress") {
+    if (previousStatus === "PAID" && status === "IN_PROGRESS") {
       await sendSms({
         to: order.customer.phone,
         message: `Your order #${shortId} is now being processed.`,
@@ -208,7 +214,7 @@ router.patch("/:id/status", protect, async (req, res) => {
     }
 
     // In Progress → Completed
-    if (previousStatus === "In Progress" && status === "Completed") {
+    if (previousStatus === "IN_PROGRESS" && status === "COMPLETED") {
       await sendSms({
         to: order.customer.phone,
         message: `Your order #${shortId} has been delivered. Thank you!`,
@@ -216,7 +222,7 @@ router.patch("/:id/status", protect, async (req, res) => {
     }
 
     // Any → Cancelled
-    if (status === "Cancelled") {
+    if (status === "CANCELLED") {
       await sendSms({
         to: order.customer.phone,
         message: `Your order #${shortId} has been cancelled.`,
@@ -238,11 +244,125 @@ router.get("/:id/invoice", protect, async (req, res) => {
   const order = await Order.findById(req.params.id).lean();
   if (!order) return res.status(404).json({ message: "Order not found" });
 
-  if (order.status !== "Paid" && order.status !== "Completed") {
+  if (order.status !== "PAID" && order.status !== "COMPLETED") {
     return res.status(400).json({ message: "Invoice not available yet" });
   }
 
   generateInvoicePdf(order, res);
 });
+
+// Cancel order (customer or admin)
+router.post("/:id/cancel", protect, async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+
+    if (!order)
+      return res.status(404).json({ message: "Order not found" });
+
+    if (!["PAID", "IN_PROGRESS"].includes(order.status)) {
+      return res
+        .status(400)
+        .json({ message: "Order cannot be cancelled now" });
+    }
+
+    order.status = "CANCELLED";
+    order.refundReason = "Cancelled before shipping";
+    await order.save();
+
+    res.json({ message: "Order cancelled successfully. Refund can now be processed." });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+/**
+ * ADMIN – Process Refund
+ * POST /api/orders/:id/refund
+ */
+router.post("/:id/refund", protect, async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+
+    if (!order)
+      return res.status(404).json({ message: "Order not found" });
+
+    // Only allow refund if order is cancelled or returned
+    if (!["CANCELLED", "RETURNED"].includes(order.status)) {
+      return res
+        .status(400)
+        .json({ message: "Refund not allowed for this order" });
+    }
+
+    if (!order.razorpayPaymentId) {
+      return res
+        .status(400)
+        .json({ message: "Razorpay payment ID not found" });
+    }
+
+    // Mark refund started
+    order.status = "REFUND_PROCESSING";
+    await order.save();
+
+    // Call Razorpay
+    const refund = await refundPayment(order.razorpayPaymentId, order.total);
+
+    // Mark refund completed
+    order.status = "REFUNDED";
+    order.razorpayRefundId = refund.id;
+    order.refundedAt = new Date();
+    await order.save();
+
+    res.json({
+      message: "Refund successful",
+      refundId: refund.id,
+    });
+  } catch (err) {
+    console.error("Refund error:", err);
+    res.status(500).json({ message: "Refund failed" });
+  }
+});
+
+
+router.post("/verify-payment", protect, async (req, res) => {
+  const {
+    razorpay_order_id,
+    razorpay_payment_id,
+    razorpay_signature,
+    orderId
+  } = req.body;
+
+  const order = await Order.findById(orderId);
+
+  // verify Razorpay signature here...
+
+  order.paymentInfo = {
+    razorpay_order_id,
+    razorpay_payment_id,
+    razorpay_signature
+  };
+
+  order.razorpayPaymentId = razorpay_payment_id;
+
+  order.status = "PAID";
+  await order.save();
+
+  res.json({ message: "Payment successful" });
+});
+
+router.post("/:id/payment-failed", protect, async (req, res) => {
+  const order = await Order.findById(req.params.id);
+  if (!order) return res.status(404).json({ message: "Order not found" });
+
+  if (order.status !== "PAYMENT_PENDING") {
+    return res.status(400).json({ message: "Invalid state" });
+  }
+
+  order.status = "FAILED";
+  await order.save();
+
+  res.json({ message: "Payment marked as failed" });
+});
+
+
 
 export default router;

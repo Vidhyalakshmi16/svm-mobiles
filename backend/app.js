@@ -10,6 +10,7 @@ import contactRoutes from "./routes/contactRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import invoiceRoutes from "./routes/invoiceRoutes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
+import adminReturnRoutes from "./routes/adminReturnRoutes.js";
 
 
 dotenv.config();
@@ -38,5 +39,6 @@ app.use("/api/contact", contactRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/invoice", invoiceRoutes);
 app.use("/api/payment", paymentRoutes);
+app.use("/api/admin/returns", adminReturnRoutes);
 
 export default app;
