@@ -130,6 +130,8 @@ export default function AdminOrdersPage() {
                       {order.customer?.phone}
                     </div>
 
+
+
                     <div className="mb-2">
                       <b>Total:</b> ₹{formatINR(order.total)}
                     </div>
