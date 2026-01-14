@@ -1,11 +1,6 @@
-// backend/controllers/orderController.js
 import Order from "../models/Order.js";
 
-/**
- * 🛒 CREATE ORDER (BEFORE PAYMENT)
- * Status: payment pending
- * ❌ No email here
- */
+/* ================= CREATE ORDER (Before Payment) ================= */
 export const createOrder = async (req, res) => {
   try {
     const {
@@ -36,7 +31,7 @@ export const createOrder = async (req, res) => {
       user: req.user._id,
       customer,
       paymentMethod,
-      status: "payment pending", // 🔑 IMPORTANT (lowercase)
+      status: "PAYMENT_PENDING",   // ✅ FIXED
       subtotal: total - deliveryFee - platformFee,
       deliveryFee,
       platformFee,
@@ -45,8 +40,6 @@ export const createOrder = async (req, res) => {
     });
 
     const savedOrder = await order.save();
-
-    // ❌ NO EMAIL HERE (Razorpay flow)
     res.status(201).json(savedOrder);
   } catch (err) {
     console.error("Create order error:", err);
@@ -54,9 +47,7 @@ export const createOrder = async (req, res) => {
   }
 };
 
-/**
- * 📦 GET ALL ORDERS (ADMIN)
- */
+/* ================= ADMIN – GET ALL ORDERS ================= */
 export const getOrders = async (req, res) => {
   try {
     const orders = await Order.find().sort({ createdAt: -1 });
@@ -67,15 +58,11 @@ export const getOrders = async (req, res) => {
   }
 };
 
-/**
- * 📄 GET SINGLE ORDER
- */
+/* ================= GET SINGLE ORDER ================= */
 export const getOrderById = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
-    if (!order) {
-      return res.status(404).json({ message: "Order not found" });
-    }
+    if (!order) return res.status(404).json({ message: "Order not found" });
     res.json(order);
   } catch (err) {
     console.error("Get order by id error:", err);
@@ -83,25 +70,19 @@ export const getOrderById = async (req, res) => {
   }
 };
 
-/**
- * ❌ CANCEL ORDER (CUSTOMER)
- * Allowed ONLY if status === paid
- */
+/* ================= CUSTOMER CANCEL ================= */
 export const cancelOrder = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ message: "Order not found" });
 
-    if (!order) {
-      return res.status(404).json({ message: "Order not found" });
-    }
-
-    if (order.status !== "paid") {
+    if (order.status !== "PAID") {
       return res.status(400).json({
-        message: "Only paid orders can be cancelled",
+        message: "Only PAID orders can be cancelled",
       });
     }
 
-    order.status = "cancelled";
+    order.status = "CANCELLED";   // ✅ FIXED
     await order.save();
 
     res.json(order);
@@ -111,26 +92,17 @@ export const cancelOrder = async (req, res) => {
   }
 };
 
-/**
- * ❌ MARK PAYMENT FAILED
- * Called when Razorpay fails / user closes popup
- */
+/* ================= MARK PAYMENT FAILED ================= */
 export const markPaymentFailed = async (req, res) => {
   try {
     const { orderId } = req.body;
-
-    if (!orderId) {
-      return res.status(400).json({ message: "Order ID required" });
-    }
+    if (!orderId) return res.status(400).json({ message: "Order ID required" });
 
     const order = await Order.findById(orderId);
-    if (!order) {
-      return res.status(404).json({ message: "Order not found" });
-    }
+    if (!order) return res.status(404).json({ message: "Order not found" });
 
-    // Only pending orders can fail
-    if (order.status === "payment pending") {
-      order.status = "failed";
+    if (order.status === "PAYMENT_PENDING") {
+      order.status = "FAILED";    // ✅ FIXED
       await order.save();
     }
 
@@ -141,21 +113,21 @@ export const markPaymentFailed = async (req, res) => {
   }
 };
 
-/**
- * 🛠 ADMIN STATUS UPDATE (optional)
- * Used by admin panel
- */
+/* ================= ADMIN STATUS UPDATE ================= */
 export const updateOrderStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
 
     const allowedStatuses = [
-      "paid",
-      "in progress",
-      "completed",
-      "cancelled",
-      "failed",
+      "PAID",
+      "IN_PROGRESS",
+      "COMPLETED",
+      "CANCELLED",
+      "FAILED",
+      "RETURNED",
+      "REFUND_PROCESSING",
+      "REFUNDED",
     ];
 
     if (!allowedStatuses.includes(status)) {
@@ -163,9 +135,7 @@ export const updateOrderStatus = async (req, res) => {
     }
 
     const order = await Order.findById(id);
-    if (!order) {
-      return res.status(404).json({ message: "Order not found" });
-    }
+    if (!order) return res.status(404).json({ message: "Order not found" });
 
     order.status = status;
     await order.save();

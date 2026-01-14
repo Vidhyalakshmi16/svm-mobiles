@@ -1,17 +1,13 @@
-// backend/models/ServiceRequest.js
 import mongoose from "mongoose";
 
 const serviceRequestSchema = new mongoose.Schema(
   {
-    // 🔐 link to logged-in user (customer)
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
 
-    // basic details from the form
     name: String,
     phone: String,
     email: String,
 
-    // device / issue details (keep names exactly as used in your form)
     deviceType: String,
     mobileBrand: String,
     mobileModel: String,
@@ -24,16 +20,11 @@ const serviceRequestSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ["Placed", "In Progress", "Completed", "Cancelled"],
-      default: "Placed",
+      enum: ["PLACED", "IN_PROGRESS", "COMPLETED", "CANCELLED"],
+      default: "PLACED",
     },
   },
   { timestamps: true }
 );
 
-const ServiceRequest = mongoose.model(
-  "ServiceRequest",
-  serviceRequestSchema
-);
-
-export default ServiceRequest;
+export default mongoose.model("ServiceRequest", serviceRequestSchema);
