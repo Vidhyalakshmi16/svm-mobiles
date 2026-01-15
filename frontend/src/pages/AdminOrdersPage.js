@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { getOrdersApi, updateOrderStatusApi } from "../services/api";
+import api from "../services/axiosInstance";
+
 
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState([]);
@@ -151,7 +153,7 @@ export default function AdminOrdersPage() {
                       <option value="REFUNDED">Refunded</option>
                       <option value="FAILED">Failed</option>
                     </select>
-                    
+
                     {/* REFUND BUTTON - Must be inside the .map loop */}
                     {order.status === "REFUND_PROCESSING" && (
                       <button
