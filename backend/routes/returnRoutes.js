@@ -1,4 +1,7 @@
 import express from "express";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
 import ReturnRequest from "../models/ReturnRequest.js";
 import Order from "../models/Order.js";
 import { protect } from "../middleware/authMiddleware.js";
@@ -6,40 +9,70 @@ import sendEmail from "../utils/sendEmail.js";
 
 const router = express.Router();
 
+/* ================================
+   STORAGE CONFIG
+================================ */
+const storage = multer.diskStorage({
+  destination(req, file, cb) {
+    const dir = "uploads/returns";
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    cb(null, dir);
+  },
+  filename(req, file, cb) {
+    cb(null, `${Date.now()}-${file.originalname}`);
+  },
+});
+
+const upload = multer({ storage });
+
 /* =========================================
    CUSTOMER – Create Return Request
 ========================================= */
-router.post("/", protect, async (req, res) => {
-  try {
-    const { orderId, reason, images, video } = req.body;
+router.post(
+  "/",
+  protect,
+  upload.array("images", 6), // multiple images
+  async (req, res) => {
+    try {
+      const { orderId, reason, video, name, phone } = req.body;
 
-    const order = await Order.findById(orderId);
-    if (!order) return res.status(404).json({ message: "Order not found" });
+      const order = await Order.findById(orderId);
+      if (!order) return res.status(404).json({ message: "Order not found" });
 
-    if (order.user.toString() !== req.user.userId)
-      return res.status(403).json({ message: "Not your order" });
+      if (order.user.toString() !== req.user.userId)
+        return res.status(403).json({ message: "Not your order" });
 
-    if (order.status !== "COMPLETED")
-      return res.status(400).json({ message: "Return not allowed" });
+      if (order.status !== "COMPLETED")
+        return res.status(400).json({ message: "Return not allowed" });
 
-    const ret = await ReturnRequest.create({
-      orderId,
-      userId: req.user.userId,
-      reason,
-      images,
-      video,
-      status: "REQUESTED",
-    });
+      if (!req.files || req.files.length === 0)
+        return res.status(400).json({ message: "Product images required" });
 
-    order.status = "RETURNED";
-    await order.save();
+      // convert uploaded files → URLs
+      const images = req.files.map((f) => `/uploads/returns/${f.filename}`);
 
-    res.json({ message: "Return request submitted", ret });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Return request failed" });
+      const ret = await ReturnRequest.create({
+        orderId,
+        userId: req.user.userId,
+        name,
+        phone,
+        reason,
+        images,
+        video,
+        status: "REQUESTED",
+      });
+
+      // DO NOT mark order as refunded yet
+      order.status = "RETURNED";
+      await order.save();
+
+      res.json({ message: "Return request submitted", ret });
+    } catch (err) {
+      console.error("Return create error:", err);
+      res.status(500).json({ message: "Return request failed" });
+    }
   }
-});
+);
 
 /* =========================================
    ADMIN – Get all return requests
