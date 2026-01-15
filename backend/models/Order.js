@@ -80,6 +80,12 @@ const orderSchema = new mongoose.Schema(
       default: null
     },
 
+    // 🔥 ADD THIS
+    refundAmount: {
+      type: Number,
+      default: 0
+    },
+
     refundReason: {
       type: String,
       default: null

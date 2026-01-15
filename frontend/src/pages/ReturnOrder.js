@@ -166,7 +166,7 @@ export default function ReturnOrder() {
           <label className="form-label">Unboxing Video (optional)</label>
           <input
             className="form-control"
-            placeholder="Google Drive / YouTube link"
+            placeholder="Google Drive link"
             value={video}
             onChange={(e) => setVideo(e.target.value)}
           />
