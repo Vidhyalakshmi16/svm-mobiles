@@ -484,9 +484,13 @@ if (!user) {
                     {/* Total */}
                     <div className="d-flex justify-content-between align-items-center mt-2">
                       <div className="small text-muted">Order Total</div>
-                      <div className="fw-bold text-success fs-6">
-                        ₹{formatINR(item.refundAmount)}
-                      </div>
+                        <div className="fw-bold text-success fs-6">
+                          ₹{formatINR(
+                            ["REFUND_PROCESSING", "REFUNDED", "RETURNED"].includes(item.status)
+                              ? item.refundAmount
+                              : item.total ?? (item.subtotal + item.deliveryFee + item.platformFee)
+                          )}
+                        </div>
                     </div>
                     
                     {item.status === "REFUND_PROCESSING" && (
