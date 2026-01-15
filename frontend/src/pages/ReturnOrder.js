@@ -7,31 +7,30 @@ export default function ReturnOrder() {
   const navigate = useNavigate();
 
   const [reason, setReason] = useState("");
-  const [images, setImages] = useState([]);
+  const [images, setImages] = useState("");
   const [video, setVideo] = useState("");
-  const [courierName, setCourierName] = useState("");
-  const [trackingNumber, setTrackingNumber] = useState("");
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
 
   const submitReturn = async () => {
-    if (!reason.trim()) {
-      alert("Please provide a return reason");
+    if (!name || !phone || !reason || !images) {
+      alert("Name, phone, reason and images are required");
       return;
     }
 
     setLoading(true);
 
     try {
-      await api.post("/returns", {
-        orderId,
+      await api.post(`/orders/${orderId}/return`, {
+        name,
+        phone,
         reason,
-        images,
+        images: images.split(","),
         video,
-        courierName,
-        trackingNumber,
       });
 
-      alert("Return request submitted successfully");
+      alert("Return request submitted. Please courier the product back to us.");
       navigate("/orders");
     } catch (err) {
       alert(err.response?.data?.message || "Return request failed");
@@ -44,9 +43,38 @@ export default function ReturnOrder() {
     <div className="container mt-5 pt-4">
       <h4 className="fw-bold mb-3">Return Product</h4>
 
+      {/* 🔴 Return Policy */}
+      <div className="alert alert-warning small">
+        <b>Return Policy:</b>
+        <ul className="mb-0">
+          <li>Only delivered products can be returned</li>
+          <li>Refund will be only for product value (no delivery or platform fee)</li>
+          <li>Product images are mandatory (video is optional but recommended)</li>
+          <li>You must courier the product back after submitting this form</li>
+        </ul>
+      </div>
+
       <div className="card p-3">
         <div className="mb-3">
-          <label className="form-label">Reason *</label>
+          <label className="form-label">Your Name *</label>
+          <input
+            className="form-control"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+        </div>
+
+        <div className="mb-3">
+          <label className="form-label">Phone Number *</label>
+          <input
+            className="form-control"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+          />
+        </div>
+
+        <div className="mb-3">
+          <label className="form-label">Return Reason *</label>
           <textarea
             className="form-control"
             rows="3"
@@ -56,42 +84,22 @@ export default function ReturnOrder() {
         </div>
 
         <div className="mb-3">
-          <label className="form-label">Image URLs (optional)</label>
+          <label className="form-label">Product Images (comma separated URLs) *</label>
           <input
             className="form-control"
-            placeholder="Comma separated image URLs"
-            onChange={(e) => setImages(e.target.value.split(","))}
+            placeholder="https://img1, https://img2"
+            value={images}
+            onChange={(e) => setImages(e.target.value)}
           />
         </div>
 
         <div className="mb-3">
-          <label className="form-label">Video URL (optional)</label>
+          <label className="form-label">Unboxing Video URL </label>
           <input
             className="form-control"
-            placeholder="Video proof URL"
+            placeholder="Google Drive link"
+            value={video}
             onChange={(e) => setVideo(e.target.value)}
-          />
-        </div>
-
-        <hr />
-
-        <h6>Courier Details (after shipping back)</h6>
-
-        <div className="mb-2">
-          <input
-            className="form-control"
-            placeholder="Courier name"
-            value={courierName}
-            onChange={(e) => setCourierName(e.target.value)}
-          />
-        </div>
-
-        <div className="mb-3">
-          <input
-            className="form-control"
-            placeholder="Tracking number"
-            value={trackingNumber}
-            onChange={(e) => setTrackingNumber(e.target.value)}
           />
         </div>
 
@@ -100,7 +108,7 @@ export default function ReturnOrder() {
           disabled={loading}
           onClick={submitReturn}
         >
-          {loading ? "Submitting..." : "Submit Return"}
+          {loading ? "Submitting..." : "Submit Return Request"}
         </button>
       </div>
     </div>
