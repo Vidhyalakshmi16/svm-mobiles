@@ -122,10 +122,15 @@ const handlePlaceOrder = async (e) => {
           });
 
           if (res) {
-            clearCart();
             navigate("/order-success", {
               state: { orderId: order._id },
+              replace: true,
             });
+
+            // Clear cart AFTER navigation
+            setTimeout(() => {
+              clearCart();
+            }, 200);
           } else {
             alert("Payment verification failed");
           }
@@ -133,6 +138,7 @@ const handlePlaceOrder = async (e) => {
           alert("Payment verification error");
         }
       },
+
 
       modal: {
         ondismiss: async () => {

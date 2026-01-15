@@ -6,6 +6,8 @@ import sendEmail from "../utils/sendEmail.js";
 import sendSms from "../utils/message.js";
 import generateInvoicePdf from "../utils/generateInvoicePdf.js";
 import { refundPayment } from "../utils/razorpay.js";
+import crypto from "crypto";
+
 
 
 const router = express.Router();
@@ -178,25 +180,23 @@ router.patch("/:id/status", protect, async (req, res) => {
       return res.status(404).json({ message: "Order not found" });
     }
 
+    // 🔒 Block edits during refund
+    if (["REFUND_PROCESSING", "REFUNDED"].includes(order.status)) {
+      return res.status(400).json({
+        message: "Order is in refund process and cannot be changed manually"
+      });
+    }
+
     const previousStatus = order.status;
     const isCustomer = req.user.role !== "admin";
 
     // 🔒 CUSTOMER RULES
     if (isCustomer) {
-      if (status !== "CANCELLED") {
-        return res.status(403).json({ message: "Not allowed" });
-      }
-
-      if (order.status !== "PAID") {
-        return res
-          .status(400)
-          .json({ message: "Only paid orders can be cancelled" });
-      }
-
-      if (order.user.toString() !== req.user.userId) {
-        return res.status(403).json({ message: "Not your order" });
-      }
+      return res.status(403).json({
+        message: "Customers cannot change order status directly"
+      });
     }
+
 
     order.status = status;
     await order.save();
@@ -228,6 +228,7 @@ router.patch("/:id/status", protect, async (req, res) => {
         message: `Your order #${shortId} has been cancelled.`,
       });
     }
+    
 
     res.json(order);
   } catch (err) {
@@ -259,21 +260,65 @@ router.post("/:id/cancel", protect, async (req, res) => {
     if (!order)
       return res.status(404).json({ message: "Order not found" });
 
-    if (!["PAID", "IN_PROGRESS"].includes(order.status)) {
-      return res
-        .status(400)
-        .json({ message: "Order cannot be cancelled now" });
+    if (order.user.toString() !== req.user.userId) {
+      return res.status(403).json({ message: "Not your order" });
     }
 
-    order.status = "CANCELLED";
-    order.refundReason = "Cancelled before shipping";
-    await order.save();
+    // If payment not done → just cancel
+    if (order.status === "PAYMENT_PENDING") {
+      order.status = "CANCELLED";
+      await order.save();
+      return res.json(order);
+    }
 
-    res.json({ message: "Order cancelled successfully. Refund can now be processed." });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+    // If paid but not delivered → full refund (except platform fee)
+    if (order.status === "PAID" || order.status === "IN_PROGRESS") {
+      order.status = "REFUND_PROCESSING";
+      order.refundAmount = order.subtotal + order.deliveryFee;
+      order.refundReason = "Customer cancelled before delivery";
+      await order.save();
+      return res.json(order);
+    }
+
+    return res
+      .status(400)
+      .json({ message: "Order cannot be cancelled now" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 });
+
+router.post("/:id/return", protect, async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+
+    if (!order)
+      return res.status(404).json({ message: "Order not found" });
+
+    if (order.user.toString() !== req.user.userId)
+      return res.status(403).json({ message: "Not your order" });
+
+    if (order.status !== "COMPLETED") {
+      return res.status(400).json({ message: "Return allowed only after delivery" });
+    }
+
+    // Refund only product price
+    const productTotal = order.items.reduce(
+      (sum, i) => sum + (i.finalPrice ?? i.price) * i.quantity,
+      0
+    );
+
+    order.status = "REFUND_PROCESSING";
+    order.refundAmount = productTotal;
+    order.refundReason = "Customer returned item after delivery";
+
+    await order.save();
+    res.json(order);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 
 /**
  * ADMIN – Process Refund
@@ -286,36 +331,34 @@ router.post("/:id/refund", protect, async (req, res) => {
     if (!order)
       return res.status(404).json({ message: "Order not found" });
 
-    // Only allow refund if order is cancelled or returned
-    if (!["CANCELLED", "RETURNED"].includes(order.status)) {
-      return res
-        .status(400)
-        .json({ message: "Refund not allowed for this order" });
+    if (order.status === "REFUNDED") {
+      return res.status(400).json({ message: "Already refunded" });
+    }
+
+    if (order.status !== "REFUND_PROCESSING") {
+      return res.status(400).json({ message: "Refund not initiated" });
     }
 
     if (!order.razorpayPaymentId) {
-      return res
-        .status(400)
-        .json({ message: "Razorpay payment ID not found" });
+      return res.status(400).json({ message: "Payment ID missing" });
     }
 
-    // Mark refund started
-    order.status = "REFUND_PROCESSING";
-    await order.save();
+    const refund = await refundPayment(
+      order.razorpayPaymentId,
+      order.refundAmount
+    );
 
-    // Call Razorpay
-    const refund = await refundPayment(order.razorpayPaymentId, order.total);
-
-    // Mark refund completed
     order.status = "REFUNDED";
     order.razorpayRefundId = refund.id;
     order.refundedAt = new Date();
+
     await order.save();
 
     res.json({
       message: "Refund successful",
-      refundId: refund.id,
+      amount: order.refundAmount,
     });
+
   } catch (err) {
     console.error("Refund error:", err);
     res.status(500).json({ message: "Refund failed" });
@@ -324,30 +367,51 @@ router.post("/:id/refund", protect, async (req, res) => {
 
 
 router.post("/verify-payment", protect, async (req, res) => {
-  const {
-    razorpay_order_id,
-    razorpay_payment_id,
-    razorpay_signature,
-    orderId
-  } = req.body;
+  try {
+    const {
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature,
+      orderId
+    } = req.body;
 
-  const order = await Order.findById(orderId);
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
 
-  // verify Razorpay signature here...
+    // 🔐 Razorpay signature verification
+    const body = razorpay_order_id + "|" + razorpay_payment_id;
 
-  order.paymentInfo = {
-    razorpay_order_id,
-    razorpay_payment_id,
-    razorpay_signature
-  };
+    const expectedSignature = crypto
+      .createHmac("sha256", process.env.RAZORPAY_SECRET)
+      .update(body)
+      .digest("hex");
 
-  order.razorpayPaymentId = razorpay_payment_id;
+    if (expectedSignature !== razorpay_signature) {
+      return res.status(400).json({ message: "Payment verification failed" });
+    }
 
-  order.status = "PAID";
-  await order.save();
+    // Save payment info
+    order.paymentInfo = {
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature
+    };
 
-  res.json({ message: "Payment successful" });
+    order.razorpayPaymentId = razorpay_payment_id;
+    order.status = "PAID";
+
+    await order.save();
+
+    res.json({ message: "Payment verified & order marked as PAID" });
+
+  } catch (err) {
+    console.error("Verify payment error:", err);
+    res.status(500).json({ message: "Payment verification failed" });
+  }
 });
+
 
 router.post("/:id/payment-failed", protect, async (req, res) => {
   const order = await Order.findById(req.params.id);

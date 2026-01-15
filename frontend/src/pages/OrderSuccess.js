@@ -6,9 +6,41 @@ import confetti from "canvas-confetti";
 const OrderSuccess = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const orderId = location.state?.orderId;
 
-  // We expect Checkout to send: navigate("/order-success", { state: { order } })
-  const order = location.state?.order;
+  const [order, setOrder] = React.useState(null);
+  const [loading, setLoading] = React.useState(true);
+
+  useEffect(() => {
+  if (!orderId) {
+    navigate("/orders", { replace: true });
+    return;
+  }
+
+  const fetchOrder = async () => {
+    try {
+      const res = await fetch(
+        `${process.env.REACT_APP_API_URL}/orders/${orderId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      const data = await res.json();
+      setOrder(data);
+    } catch (err) {
+      console.error("Failed to load order", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchOrder();
+}, [orderId, navigate]);
+
+
 
   // 🎉 Confetti animation (only if we actually have an order)
   useEffect(() => {
@@ -36,6 +68,14 @@ const OrderSuccess = () => {
       }
     })();
   }, [order]);
+  
+  if (loading) {
+    return (
+      <div className="container mt-5 pt-5 text-center">
+        <h5>Loading your order…</h5>
+      </div>
+    );
+  }
 
   // If user refreshes or lands here without order data
   if (!order) {

@@ -244,7 +244,7 @@ const handleCancel = async (item) => {
 
     setOrders((prev) =>
       prev.map((o) =>
-        o._id === item._uid ? { ...o, status: "CANCELLED" } : o
+        o._id === item._uid ? { ...o, status: "REFUND_PROCESSING" } : o
       )
     );
   } finally {
@@ -485,9 +485,22 @@ if (!user) {
                     <div className="d-flex justify-content-between align-items-center mt-2">
                       <div className="small text-muted">Order Total</div>
                       <div className="fw-bold text-success fs-6">
-                        ₹{formatINR(item.total)}
+                        ₹{formatINR(item.refundAmount)}
                       </div>
                     </div>
+                    
+                    {item.status === "REFUND_PROCESSING" && (
+                    <div className="mt-2 p-2 rounded bg-warning-subtle text-warning fw-semibold small">
+                      ₹{formatINR(item.refundAmount)} will be credited to your original payment method in 5–7 working days.
+                    </div>
+                  )}
+
+                  {item.status === "REFUNDED" && (
+                    <div className="mt-2 p-2 rounded bg-success-subtle text-success fw-semibold small">
+                      ₹{formatINR(item.refundAmount)} has been refunded to your original payment method.
+                    </div>
+                  )}
+
                   </>
                 ) : (
                   <>

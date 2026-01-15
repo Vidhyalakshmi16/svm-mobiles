@@ -135,34 +135,31 @@ export default function AdminOrdersPage() {
                     <div className="mb-2">
                       <b>Total:</b> ₹{formatINR(order.total)}
                     </div>
-
                     <select
                       className="form-select form-select-sm mb-2"
                       value={order.status}
+                      disabled={["REFUND_PROCESSING", "REFUNDED"].includes(order.status)}
                       onChange={(e) => handleStatusChange(order._id, e.target.value)}
                     >
                       <option value="PAYMENT_PENDING">Payment Pending</option>
                       <option value="PAID">Paid</option>
+                      <option value="IN_PROGRESS">In Progress</option>
                       <option value="COMPLETED">Completed</option>
                       <option value="CANCELLED">Cancelled</option>
+                      <option value="RETURNED">Returned</option>
+                      <option value="REFUND_PROCESSING">Refund Processing</option>
+                      <option value="REFUNDED">Refunded</option>
+                      <option value="FAILED">Failed</option>
                     </select>
-
+                    
                     {/* REFUND BUTTON - Must be inside the .map loop */}
-                    {(order.status === "CANCELLED" || order.status === "RETURNED") && (
+                    {order.status === "REFUND_PROCESSING" && (
                       <button
-                        className="btn btn-sm btn-danger w-100"
+                        className="btn btn-sm btn-success w-100"
                         onClick={async () => {
-                          if (!window.confirm("Process refund?")) return;
-                          try {
-                            await fetch(`${process.env.REACT_APP_API_URL}/orders/${order._id}/refund`, {
-                              method: "POST",
-                              headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-                            });
-                            alert("Refund processed");
-                            fetchOrders();
-                          } catch (err) {
-                            alert("Refund failed");
-                          }
+                          if (!window.confirm("Send refund to Razorpay now?")) return;
+                          await api.post(`/orders/${order._id}/refund`);
+                          fetchOrders();
                         }}
                       >
                         Process Refund

@@ -76,21 +76,32 @@ export const cancelOrder = async (req, res) => {
     const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).json({ message: "Order not found" });
 
-    if (order.status !== "PAID") {
-      return res.status(400).json({
-        message: "Only PAID orders can be cancelled",
-      });
+    // If not paid yet → just cancel
+    if (order.status === "PAYMENT_PENDING") {
+      order.status = "CANCELLED";
+      await order.save();
+      return res.json(order);
     }
 
-    order.status = "CANCELLED";   // ✅ FIXED
-    await order.save();
+    // If already paid and not shipped yet
+    if (order.status === "PAID") {
+      order.status = "REFUND_PROCESSING";
+      order.refundAmount = order.subtotal + order.deliveryFee; // 🔥 policy
+      order.refundReason = "Customer cancelled before shipment";
+      await order.save();
+      return res.json(order);
+    }
 
-    res.json(order);
+    return res.status(400).json({
+      message: `Order cannot be cancelled in ${order.status} state`,
+    });
   } catch (err) {
     console.error("Cancel order error:", err);
     res.status(500).json({ message: "Failed to cancel order" });
   }
 };
+
+
 
 /* ================= MARK PAYMENT FAILED ================= */
 export const markPaymentFailed = async (req, res) => {
@@ -146,3 +157,43 @@ export const updateOrderStatus = async (req, res) => {
     res.status(500).json({ message: "Failed to update order" });
   }
 };
+
+export const returnOrder = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ message: "Order not found" });
+
+    if (order.status !== "COMPLETED") {
+      return res.status(400).json({ message: "Only delivered orders can be returned" });
+    }
+
+    order.status = "REFUND_PROCESSING";
+    order.refundAmount = order.subtotal;   // 🔥 ONLY product price
+    order.refundReason = "Customer returned the product";
+
+    await order.save();
+    res.json(order);
+  } catch (err) {
+    res.status(500).json({ message: "Return failed" });
+  }
+};
+
+export const markRefundCompleted = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ message: "Order not found" });
+
+    if (order.status !== "REFUND_PROCESSING") {
+      return res.status(400).json({ message: "Refund not in processing state" });
+    }
+
+    order.status = "REFUNDED";
+    order.refundedAt = new Date();
+    await order.save();
+
+    res.json(order);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to complete refund" });
+  }
+};
+
