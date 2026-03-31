@@ -55,7 +55,7 @@ export default function ProductDetail() {
 
   const {
     name,
-    brand,
+    // brand,
     price,
     finalPrice,
     discount,

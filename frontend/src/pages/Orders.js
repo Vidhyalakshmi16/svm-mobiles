@@ -5,9 +5,7 @@ import {
   getMyOrdersApi,
   getMyServiceRequests,
   cancelOrder,
-  cancelServiceRequest,
 } from "../services/api";
-import api from "../services/axiosInstance"; // the one with token
 import {
   verifyPaymentApi,
   retryPaymentApi
@@ -369,7 +367,7 @@ if (!user) {
     visibleCards.map((item) => {
       const isOrder = item._type === "order";
       const status = getStatus(item);
-      const s = status.toLowerCase();
+      // const s = status.toLowerCase();
 
       const canCancel = isOrder && item.status === "PAID";
       const canRetry = isOrder && ["PAYMENT_PENDING", "FAILED"].includes(item.status);

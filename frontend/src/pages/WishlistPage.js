@@ -50,8 +50,8 @@ const WishlistPage = () => {
         {wishlist.map((product) => {
           const finalPrice = product.finalPrice ?? product.price;
           const originalPrice = product.price;
-          const hasDiscount =
-            product.discount > 0 && originalPrice > finalPrice;
+          // const hasDiscount =
+          //   product.discount > 0 && originalPrice > finalPrice;
 
           return (
    <div
