@@ -3,12 +3,12 @@ import "./Footer.css";
 
 function Footer() {
   return (
-    <footer className="footer text-white mt-5">
+    <footer className="footer mt-5 pt-5">
       <div className="container py-4">
         <div className="row">
           {/* Shop Info */}
           <div className="col-md-4 mb-3">
-            <h5 className="fw-bold">📱 Sri Vaari Mobiles</h5>
+            <h5>Sri Vaari Mobiles</h5>
             <p>
               Your one-stop shop for mobiles, accessories, and repair services.
               We provide quality products with trusted support.
@@ -17,7 +17,7 @@ function Footer() {
 
           {/* Quick Links */}
           <div className="col-md-4 mb-3">
-            <h5 className="fw-bold">Quick Links</h5>
+            <h5>Quick links</h5>
             <ul className="list-unstyled">
               <li><Link to="/" className="footer-link">Home</Link></li>
               <li><Link to="/products" className="footer-link">Products</Link></li>
@@ -28,10 +28,10 @@ function Footer() {
 
           {/* Contact Info */}
           <div className="col-md-4 mb-3">
-            <h5 className="fw-bold">Contact Us</h5>
-            <p>📍 296/82, Tvk road, Ammapet, Salem, Tamil Nadu</p>
-            <p>📞 +91 87546 74075</p>
-            <p>📧 srivaarimobiles2021@gmail.com</p>
+            <h5>Contact</h5>
+            <p>296/82, Tvk road, Ammapet, Salem, Tamil Nadu</p>
+            <p>+91 87546 74075</p>
+            <p>srivaarimobiles2021@gmail.com</p>
 
             {/* Social Icons */}
             <div className="social-icons mt-2">
@@ -42,7 +42,7 @@ function Footer() {
             </div>
           </div>
         </div>
-        <hr className="bg-light" />
+        <hr />
         <div className="text-center">
           <small>© {new Date().getFullYear()} Sri Vaari Mobiles | All Rights Reserved.</small>
         </div>

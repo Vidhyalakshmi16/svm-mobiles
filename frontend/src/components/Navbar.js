@@ -4,6 +4,7 @@ import { ShoppingCart } from "lucide-react";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { Heart, LogOut, UserCircle} from "lucide-react";
+import "./Navbar.css";
 
 
 function Navbar() {
@@ -40,8 +41,8 @@ function Navbar() {
 
 
   return (
-    <nav className="navbar navbar-expand-lg navbar-dark bg-dark px-3 shadow-sm fixed-top">
-      <Link className="navbar-brand fw-bold fs-4" to="/">
+    <nav className="site-navbar navbar navbar-expand-lg navbar-dark fixed-top px-3 px-lg-4">
+      <Link className="navbar-brand" to="/">
         Sri Vaari Mobiles
       </Link>
 
@@ -87,20 +88,7 @@ function Navbar() {
               <span className="ms-1">Cart</span>
 
               {cartCount > 0 && (
-                <span
-                  className="position-absolute top-0 start-100 translate-middle badge rounded-circle"
-                  style={{
-                    backgroundColor: "orange",
-                    color: "black",
-                    fontSize: "12px",
-                    fontWeight: "bold",
-                    width: "18px",
-                    height: "18px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
+                <span className="cart-badge position-absolute top-0 start-100 translate-middle badge rounded-circle">
                   {cartCount}
                 </span>
               )}
@@ -147,7 +135,8 @@ function Navbar() {
           <li className="nav-item ms-2">
             {!user ? (
               <button
-                className="btn btn-outline-light btn-sm"
+                type="button"
+                className="btn btn-login"
                 onClick={() => {
                   closeNavbar();
                   navigate("/auth");

@@ -9,16 +9,11 @@ import {
   verifyPaymentApi,
 } from "../services/api";
 
-
-
 export default function Checkout() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const location = useLocation();
-  const {
-    cartItems = [],
-    clearCart,
-  } = useCart();
+  const { cartItems = [], clearCart } = useCart();
 
   const [form, setForm] = useState({
     name: "",
@@ -30,19 +25,14 @@ export default function Checkout() {
 
   const [placing, setPlacing] = useState(false);
 
-    /* 🔒 BLOCK CHECKOUT FOR NON-LOGGED USER */
   if (!user) {
     return (
-      <Navigate
-        to="/auth"
-        state={{ from: location.pathname }}
-        replace
-      />
+      <Navigate to="/auth" state={{ from: location.pathname }} replace />
     );
   }
+
   const isEmpty = cartItems.length === 0;
 
-  // ---------- SAME PRICING LOGIC AS CART ----------
   const subtotal = cartItems.reduce((sum, item) => {
     const unitPrice = item.finalPrice ?? item.price ?? 0;
     const qty = item.quantity || 1;
@@ -55,183 +45,160 @@ export default function Checkout() {
 
   const grandTotal = subtotal + platformFee + deliveryFee;
 
-  // ---------- HANDLERS ----------
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
-const handlePlaceOrder = async (e) => {
-  e.preventDefault();
-  if (isEmpty || placing) return;
 
-  const { name, phone, address, city, pincode } = form;
+  const handlePlaceOrder = async (e) => {
+    e.preventDefault();
+    if (isEmpty || placing) return;
 
-  if (!name || !phone || !address || !city || !pincode) {
-    alert("Please fill all required fields");
-    return;
-  }
+    const { name, phone, address, city, pincode } = form;
 
-  if (!window.Razorpay) {
-    alert("Razorpay SDK not loaded");
-    return;
-  }
+    if (!name || !phone || !address || !city || !pincode) {
+      alert("Please fill all required fields");
+      return;
+    }
 
-  setPlacing(true);
+    if (!window.Razorpay) {
+      alert("Razorpay SDK not loaded");
+      return;
+    }
 
-  try {
-    const customer = {
-      name,
-      phone,
-      address,
-      city,
-      pincode,
-      email: user.email,
-    };
+    setPlacing(true);
 
-    // 1️⃣ Create order (Payment Pending)
-    const order = await createOrderApi({
-      customer,
-      paymentMethod: "UPI",
-      subtotal,
-      deliveryFee,
-      platformFee,
-      total: grandTotal,
-      items: cartItems,
-    });
+    try {
+      const customer = {
+        name,
+        phone,
+        address,
+        city,
+        pincode,
+        email: user.email,
+      };
 
-    // 2️⃣ Create Razorpay order
-    const razorpayOrder = await createPaymentOrderApi({
-      amount: grandTotal,
-      orderId: order._id,
-    });
+      const order = await createOrderApi({
+        customer,
+        paymentMethod: "UPI",
+        subtotal,
+        deliveryFee,
+        platformFee,
+        total: grandTotal,
+        items: cartItems,
+      });
 
-    // 3️⃣ Razorpay options
-    const options = {
-      key: process.env.REACT_APP_RAZORPAY_KEY_ID,
-      amount: razorpayOrder.amount,
-      currency: "INR",
-      name: "Sri Vaari Mobiles",
-      description: "Order Payment",
-      order_id: razorpayOrder.razorpayOrderId,
+      const razorpayOrder = await createPaymentOrderApi({
+        amount: grandTotal,
+        orderId: order._id,
+      });
 
-      handler: async (response) => {
-        try {
-          const res = await verifyPaymentApi({
-            ...response,
-            orderId: order._id,
-          });
+      const options = {
+        key: process.env.REACT_APP_RAZORPAY_KEY_ID,
+        amount: razorpayOrder.amount,
+        currency: "INR",
+        name: "Sri Vaari Mobiles",
+        description: "Order Payment",
+        order_id: razorpayOrder.razorpayOrderId,
 
-          if (res) {
-            navigate("/order-success", {
-              state: { orderId: order._id },
-              replace: true,
+        handler: async (response) => {
+          try {
+            const res = await verifyPaymentApi({
+              ...response,
+              orderId: order._id,
             });
 
-            // Clear cart AFTER navigation
-            setTimeout(() => {
-              clearCart();
-            }, 200);
-          } else {
-            alert("Payment verification failed");
-          }
-        } catch (err) {
-          alert("Payment verification error");
-        }
-      },
+            if (res) {
+              navigate("/order-success", {
+                state: { orderId: order._id },
+                replace: true,
+              });
 
-
-      modal: {
-        ondismiss: async () => {
-          await fetch(
-            `${process.env.REACT_APP_API_URL}/orders/${order._id}/payment-failed`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${localStorage.getItem("token")}`,
-              },
+              setTimeout(() => {
+                clearCart();
+              }, 200);
+            } else {
+              alert("Payment verification failed");
             }
-          );
+          } catch {
+            alert("Payment verification error");
+          }
         },
-      },
 
-      theme: { color: "#111827" },
-    };
-
-    const rzp = new window.Razorpay(options);
-
-    // ❌ Payment failed event
-    rzp.on("payment.failed", async () => {
-      await fetch(
-        `${process.env.REACT_APP_API_URL}/orders/${order._id}/payment-failed`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
+        modal: {
+          ondismiss: async () => {
+            await fetch(
+              `${process.env.REACT_APP_API_URL}/orders/${order._id}/payment-failed`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${localStorage.getItem("token")}`,
+                },
+              }
+            );
           },
-        }
-      );
+        },
 
-      alert("Payment failed. Please try again.");
-    });
+        theme: { color: "#7d5f0c" },
+      };
 
-    rzp.open();
-  } catch (err) {
-    console.error("Checkout error:", err);
-    alert("Something went wrong. Please try again.");
-  } finally {
-    setPlacing(false);
-  }
-};
+      const rzp = new window.Razorpay(options);
 
+      rzp.on("payment.failed", async () => {
+        await fetch(
+          `${process.env.REACT_APP_API_URL}/orders/${order._id}/payment-failed`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
 
-  // ---------- EMPTY STATE ----------
+        alert("Payment failed. Please try again.");
+      });
+
+      rzp.open();
+    } catch (err) {
+      console.error("Checkout error:", err);
+      alert("Something went wrong. Please try again.");
+    } finally {
+      setPlacing(false);
+    }
+  };
+
   if (isEmpty) {
     return (
-      <div
-        className="container"
-        style={{ paddingTop: "90px", paddingBottom: "40px" }}
-      >
-        <div className="empty-cart-card text-center">
-          <h4 className="fw-bold mb-2">Checkout</h4>
-          <p className="text-muted mb-3" style={{ fontSize: "0.9rem" }}>
-            Your cart is empty. Add items before proceeding to checkout.
+      <div className="container py-4">
+        <div className="lux-empty-card text-center">
+          <p className="lux-eyebrow">Checkout</p>
+          <h1 className="lux-heading-lg mb-2">Your bag is empty</h1>
+          <p className="text-muted mb-4 small">
+            Add products before completing checkout.
           </p>
-          <Link to="/products" className="btn btn-dark btn-sm px-4">
-            Browse Products
+          <Link to="/products" className="store-btn-primary px-5">
+            Browse collection
           </Link>
         </div>
-
-        <style>{`
-          .empty-cart-card {
-            background: #ffffff;
-            border-radius: 16px;
-            padding: 28px 24px;
-            border: 1px solid #e5e7eb;
-          }
-        `}</style>
       </div>
     );
   }
 
-  // ---------- MAIN UI ----------
   return (
-    <div
-      className="container"
-      style={{ paddingTop: "90px", paddingBottom: "40px" }}
-    >
-      <h3 className="fw-bold mb-4">Checkout</h3>
+    <div className="container py-4">
+      <p className="lux-eyebrow mb-1">Secure checkout</p>
+      <h1 className="store-page-title mb-4">Delivery &amp; payment</h1>
 
-      <div className="row g-3">
-        {/* LEFT: Delivery form */}
+      <div className="row g-4">
         <div className="col-lg-8">
-          <div className="cart-card">
-            <h6 className="fw-semibold mb-3">Delivery Details</h6>
+          <div className="lux-cart-card lux-form">
+            <h2 className="lux-heading-lg fs-4 mb-3">Delivery details</h2>
 
             <form onSubmit={handlePlaceOrder}>
               <div className="mb-3">
-                <label className="form-label">Full Name *</label>
+                <label className="form-label">Full name *</label>
                 <input
                   type="text"
                   className="form-control"
@@ -243,7 +210,7 @@ const handlePlaceOrder = async (e) => {
               </div>
 
               <div className="mb-3">
-                <label className="form-label">Mobile Number *</label>
+                <label className="form-label">Mobile number *</label>
                 <input
                   type="tel"
                   className="form-control"
@@ -291,74 +258,81 @@ const handlePlaceOrder = async (e) => {
                 </div>
               </div>
 
-                <div className="mb-3">
-                  <label className="form-label">Payment Method</label>
-                  <div className="alert alert-success small">
-                    UPI Payment (Google Pay / PhonePe / Paytm)
-                  </div>
-                  <div className="small text-muted mt-1">
-                    Secure UPI payment. Supports Google Pay, PhonePe & Paytm.
-                  </div>
+              <div className="mb-3">
+                <label className="form-label">Payment</label>
+                <div className="alert lux-alert-pay small mb-0">
+                  UPI — Google Pay, PhonePe, Paytm
                 </div>
+                <div className="small text-muted mt-2">
+                  Secure payment powered by Razorpay.
+                </div>
+              </div>
 
               <button
                 type="submit"
-                className="btn btn-dark w-100 mt-2"
+                className="store-btn-primary w-100 mt-1"
                 disabled={placing}
               >
-                {placing ? "Placing Order..." : "Place Order"}
+                {placing ? "Processing…" : "Place order"}
               </button>
             </form>
           </div>
         </div>
 
-        {/* RIGHT: Order summary – SAME STYLE AS CART SUMMARY */}
         <div className="col-lg-4">
-          <div className="summary-card">
-            <h6 className="fw-semibold mb-3">Order Summary</h6>
+          <div className="lux-summary-card">
+            <h6 className="lux-summary-title">Order summary</h6>
 
-            {/* Items list (optional small view) */}
-<div className="mb-3" style={{ maxHeight: 200, overflowY: "auto" }}>
-  {cartItems.map((item) => {
-    const unitPrice = item.finalPrice ?? item.price ?? 0;
-    const qty = item.quantity || 1;
-    const lineTotal = unitPrice * qty;
-
-    return (
-      <div
-        key={item._id}
-        className="d-flex justify-content-between align-items-center mb-3"
-      >
-        {/* LEFT SIDE */}
-        <div className="d-flex align-items-center gap-2">
-          {(item.image || item.images?.[0]) && (
-            <img
-              src={item.image || item.images?.[0]}
-              alt={item.name}
+            <div
+              className="mb-3 rounded-3 p-2"
               style={{
-                width: 40,
-                height: 40,
-                objectFit: "cover",
-                borderRadius: 8,
+                maxHeight: 220,
+                overflowY: "auto",
+                background: "rgba(201,162,39,0.06)",
+                border: "1px solid var(--lux-border)",
               }}
-            />
-          )}
-          <div>
-            <div className="small fw-semibold">{item.name}</div>
-            <div className="small text-muted">Qty: {qty}</div>
-          </div>
-        </div>
+            >
+              {cartItems.map((item) => {
+                const unitPrice = item.finalPrice ?? item.price ?? 0;
+                const qty = item.quantity || 1;
+                const lineTotal = unitPrice * qty;
 
-        {/* RIGHT SIDE PRICE (THIS IS WHAT YOU WANT) */}
-        <div className="small fw-semibold">
-          ₹{lineTotal.toLocaleString("en-IN")}
-        </div>
-      </div>
-    );
-  })}
-</div>
+                return (
+                  <div
+                    key={item._id}
+                    className="d-flex justify-content-between align-items-center py-2 border-bottom border-opacity-10"
+                    style={{ borderColor: "var(--lux-border)" }}
+                  >
+                    <div className="d-flex align-items-center gap-2">
+                      {(item.image || item.images?.[0]) && (
+                        <img
+                          src={item.image || item.images?.[0]}
+                          alt={item.name}
+                          style={{
+                            width: 44,
+                            height: 44,
+                            objectFit: "cover",
+                            borderRadius: 8,
+                            border: "1px solid var(--lux-border)",
+                          }}
+                        />
+                      )}
+                      <div>
+                        <div className="small fw-semibold">{item.name}</div>
+                        <div className="small text-muted">Qty: {qty}</div>
+                      </div>
+                    </div>
+                    <div className="small fw-bold">
+                      ₹{lineTotal.toLocaleString("en-IN")}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
 
-            <h6 className="fw-semibold mb-2">Price Details</h6>
+            <h6 className="fw-semibold mb-2 small text-uppercase text-muted">
+              Pricing
+            </h6>
 
             <div className="d-flex justify-content-between mb-2 small text-muted">
               <span>Items total</span>
@@ -366,15 +340,15 @@ const handlePlaceOrder = async (e) => {
             </div>
 
             <div className="d-flex justify-content-between mb-2 small text-muted">
-              <span>Delivery charges</span>
-              <span className={deliveryFee === 0 ? "text-success" : ""}>
+              <span>Delivery</span>
+              <span className={deliveryFee === 0 ? "text-success fw-semibold" : ""}>
                 {deliveryFee === 0 ? "Free" : `₹${deliveryFee}`}
               </span>
             </div>
 
             <div className="d-flex justify-content-between mb-2 small text-muted">
               <span>Platform fee</span>
-              <span className={platformFee === 0 ? "text-success" : ""}>
+              <span className={platformFee === 0 ? "text-success fw-semibold" : ""}>
                 {platformFee === 0 ? "Free" : `₹${platformFee}`}
               </span>
             </div>
@@ -383,7 +357,7 @@ const handlePlaceOrder = async (e) => {
               <div className="small text-muted mb-2">
                 Add ₹{1000 - subtotal} more for{" "}
                 <span className="text-success fw-semibold">
-                  FREE delivery & FREE platform fee
+                  free delivery &amp; platform fee
                 </span>
                 .
               </div>
@@ -391,42 +365,13 @@ const handlePlaceOrder = async (e) => {
 
             <hr className="my-2" />
 
-            <div className="d-flex justify-content-between fw-semibold mb-1">
-              <span>Total Amount</span>
+            <div className="d-flex justify-content-between fw-bold fs-5 mb-0" style={{ color: "var(--lux-ink)" }}>
+              <span>Total</span>
               <span>₹{grandTotal.toLocaleString("en-IN")}</span>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Reuse same styles from Cart for card + summary */}
-      <style>{`
-        .cart-card {
-          background: #ffffff;
-          border-radius: 16px;
-          padding: 16px;
-          border: 1px solid #e5e7eb;
-        }
-
-        .summary-card {
-          background: #ffffff;
-          border-radius: 16px;
-          padding: 16px 18px;
-          border: 1px solid #e5e7eb;
-          position: sticky;
-          top: 90px;
-        }
-
-        @media (max-width: 767px) {
-          .summary-card {
-            position: static;
-            margin-top: 8px;
-          }
-          .cart-card {
-            padding: 12px;
-          }
-        }
-      `}</style>
     </div>
   );
 }

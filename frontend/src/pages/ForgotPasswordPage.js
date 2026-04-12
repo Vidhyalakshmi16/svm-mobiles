@@ -106,66 +106,6 @@ const ForgotPasswordPage = () => {
           </button>
         </div>
       </div>
-      {/* Simple styling */}
-      <style>{`
-        .auth-page {
-          min-height: 100vh;
-          background: radial-gradient(circle at top left, #1f2937 0, #020617 55%);
-          padding-top: 60px;
-        }
-        .auth-card {
-          width: 100%;
-          max-width: 380px;
-          background: #f9fafb;
-          border-radius: 18px;
-          padding: 24px 24px 20px;
-        }
-        /* Reduce spacing for reset password fields */
-        .small-space input {
-          height: 42px !important;
-          padding: 8px 12px !important;
-        }
-
-        /* Success box */
-        .auth-success {
-          background: #e6f7e9;
-          color: #0f7a2c;
-          padding: 10px;
-          border-radius: 6px;
-          margin-bottom: 10px;
-          font-size: 14px;
-          text-align: center;
-        }
-
-        /* Wrapper for password + eye icon */
-        .password-wrapper {
-          position: relative;
-        }
-
-        .password-wrapper input {
-          padding-right: 40px !important;
-        }
-
-        /* Eye toggle button */
-        .password-toggle {
-          position: absolute;
-          right: 12px;
-          top: 50%;
-          transform: translateY(-50%);
-          font-size: 18px;
-          cursor: pointer;
-          opacity: 0.6;
-          transition: 0.2s;
-          user-select: none;
-        }
-
-        .password-toggle:hover {
-          opacity: 1;
-        }
-
-
-
-      `}</style>
     </div>
   );
 };

@@ -36,15 +36,15 @@ export default function ProductDetail() {
 
   if (loading) {
     return (
-      <div className="container mt-5 pt-5 text-center">
-        <div className="spinner-border" />
+      <div className="container py-5 text-center">
+        <div className="spinner-border text-secondary" role="status" />
       </div>
     );
   }
 
   if (!product) {
     return (
-      <div className="container mt-5 pt-5">
+      <div className="container py-5">
         <h4>Product not found</h4>
         <Link to="/products" className="btn btn-dark btn-sm mt-2">
           Back to Products
@@ -96,7 +96,7 @@ export default function ProductDetail() {
 
 
   return (
-    <div className="container mt-5 pt-4">
+    <div className="container py-4 lux-form">
       {/* Breadcrumb */}
       {/* <nav aria-label="breadcrumb" className="mb-3">
         <ol className="breadcrumb small">
@@ -116,7 +116,7 @@ export default function ProductDetail() {
       <div className="row g-4">
         {/* Images */}
         <div className="col-md-5">
-          <div className="bg-white rounded-4 shadow-sm p-2 position-relative">
+          <div className="store-panel p-2 position-relative">
             <button
               className="btn btn-light rounded-circle position-absolute"
               style={{ top: 10, right: 10 }}
@@ -162,7 +162,7 @@ export default function ProductDetail() {
 
         {/* Details */}
         <div className="col-md-7">
-          <div className="bg-white rounded-4 shadow-sm p-4">
+          <div className="store-panel p-4">
 
             <h3 className="fw-bold mb-2">{name}</h3>
 
@@ -210,17 +210,19 @@ export default function ProductDetail() {
               </div>
 
               <button
-                className="btn btn-dark pd-btn-primary"
+                type="button"
+                className="store-btn-primary pd-btn-primary flex-grow-1"
                 onClick={handleAddToCart}
               >
-                Add to Cart
+                Add to cart
               </button>
 
               <button
-                className="btn btn-outline-dark pd-btn-secondary"
+                type="button"
+                className="store-btn-ghost pd-btn-secondary flex-grow-1"
                 onClick={handleBuyNow}
               >
-                Buy Now
+                Buy now
               </button>
             </div>
 

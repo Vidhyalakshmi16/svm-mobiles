@@ -12,6 +12,8 @@ export default function Contact() {
     name: "",
     phone: "",
     email: "",
+    mobileBrand: "",
+    mobileModel: "",
     serviceType: "",
     preferredContact: "call",
     preferredTime: "",
@@ -72,6 +74,8 @@ const handleSubmit = async (e) => {
       name: "",
       phone: "",
       email: "",
+      mobileBrand: "",
+      mobileModel: "",
       serviceType: "",
       preferredContact: "call",
       preferredTime: "",
@@ -91,20 +95,19 @@ const handleSubmit = async (e) => {
 
 
   return (
-    <div className="container mt-5 pt-4">
-      {/* Page header */}
-      <div className="text-center mb-4">
-        <h2 className="fw-bold mb-2">Contact & Service Request</h2>
-        <p className="text-muted mb-0">
+    <div className="container py-4">
+      <div className="text-center mb-5">
+        <p className="lux-eyebrow">Concierge</p>
+        <h1 className="lux-heading-xl mb-2">Contact &amp; service request</h1>
+        <p className="lux-lead mx-auto mb-0">
           Share your issue with us. We&apos;ll call or WhatsApp you as soon as possible.
         </p>
       </div>
 
-      <div className="row g-4">
-        {/* LEFT: Form */}
+      <div className="row g-4 align-items-start">
         <div className="col-lg-7">
-          <div className="p-4 rounded-4 shadow-sm bg-white">
-            <h5 className="fw-semibold mb-3">Tell us how we can help</h5>
+          <div className="store-panel p-4 p-md-5 lux-form">
+            <h2 className="lux-heading-lg fs-4 mb-4">How can we help?</h2>
 
             <form onSubmit={handleSubmit}>
 
@@ -268,19 +271,18 @@ const handleSubmit = async (e) => {
 
               <button
                 type="submit"
-                className="btn btn-dark w-100"
+                className="store-btn-primary w-100 mt-1"
                 disabled={loading}
               >
-                {loading ? "Sending..." : user ? "Submit Request" : "Login to Submit"}
+                {loading ? "Sending…" : user ? "Submit request" : "Login to submit"}
               </button>
             </form>
           </div>
         </div>
 
-        {/* RIGHT: Shop info */}
         <div className="col-lg-5">
-          <div className="p-4 rounded-4 shadow-sm bg-white mb-3">
-            <h5 className="fw-semibold mb-3">Sri Vaari Mobiles</h5>
+          <div className="store-panel p-4 mb-3">
+            <h2 className="lux-heading-lg fs-4 mb-3">Visit us</h2>
             <p className="mb-1 text-muted small">Shop Address</p>
             <p className="mb-2">
               296/82, Tvk road, Ammapet,<br />
@@ -298,29 +300,28 @@ const handleSubmit = async (e) => {
             </p>
           </div>
 
-          <div className="p-4 rounded-4 shadow-sm bg-white">
-            <h6 className="fw-semibold mb-2">Quick Actions</h6>
+          <div className="store-panel p-4">
+            <h3 className="lux-heading-lg fs-5 mb-3">Quick actions</h3>
             <div className="d-flex flex-wrap gap-2">
               <a
                 href="tel:+918754674075"
-                className="btn btn-outline-dark btn-sm"
+                className="store-btn-ghost btn-sm py-2 px-3"
               >
-                Call Now
+                Call now
               </a>
               <a
                 href="https://wa.me/918754674075"
                 target="_blank"
                 rel="noreferrer"
-                className="btn btn-success btn-sm"
+                className="store-btn-primary store-btn-whatsapp btn-sm py-2 px-3"
               >
                 WhatsApp
               </a>
-              {/* If you have Google Maps link, put it here */}
               <a
                 href="https://maps.app.goo.gl/nD6n1AyyXkDNaxTV7"
                 target="_blank"
                 rel="noreferrer"
-                className="btn btn-outline-secondary btn-sm"
+                className="store-btn-ghost btn-sm py-2 px-3"
               >
                 Open in Maps
               </a>

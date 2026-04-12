@@ -1,30 +1,90 @@
 .footer {
-  background: linear-gradient(to right, #1a1a1a, #333);
-  color: white;
-  font-family: "Poppins", sans-serif;
+  margin-top: auto;
+  background: linear-gradient(180deg, #0c0a08 0%, #161311 48%, #0f0d0b 100%);
+  color: rgba(245, 240, 230, 0.88);
+  font-family: var(--font-sans);
+  border-top: 1px solid rgba(201, 162, 39, 0.22);
+  position: relative;
 }
 
-.footer-link {
-  color: #ffc107;
-  text-decoration: none;
-  transition: 0.3s;
+.footer::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(232, 212, 139, 0.5),
+    transparent
+  );
 }
 
-.footer-link:hover {
-  text-decoration: underline;
-  color: #fff;
-}
-
-.footer-icon {
-  color: #ffc107;
+.footer h5 {
+  font-family: var(--font-display);
   font-size: 1.2rem;
-  transition: 0.3s;
-}
-
-.footer-icon:hover {
-  color: #fff;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  background: linear-gradient(135deg, #fff8e7, #d4af37);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 1rem;
 }
 
 .footer p {
-  margin-bottom: 6px;
+  font-size: 0.875rem;
+  line-height: 1.65;
+  color: rgba(200, 192, 180, 0.92);
+  margin-bottom: 0.5rem;
+}
+
+.footer-link {
+  color: rgba(232, 212, 139, 0.88);
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: color var(--store-t-fast), transform var(--store-t-fast);
+  display: inline-block;
+}
+
+.footer-link:hover {
+  color: #fff8e7;
+  transform: translateX(3px);
+}
+
+.footer .list-unstyled li {
+  margin-bottom: 0.4rem;
+}
+
+.footer-icon {
+  color: rgba(232, 212, 139, 0.65);
+  font-size: 1.15rem;
+  transition:
+    color var(--store-t-fast),
+    transform var(--store-t-fast);
+}
+
+.footer-icon:hover {
+  color: #fff8e7;
+  transform: translateY(-2px);
+}
+
+.footer hr {
+  border-color: rgba(201, 162, 39, 0.15);
+  opacity: 1;
+}
+
+.footer small {
+  font-size: 0.8125rem;
+  color: rgba(163, 154, 146, 0.9);
+}
+
+@media (max-width: 767px) {
+  .footer .container {
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+  }
 }

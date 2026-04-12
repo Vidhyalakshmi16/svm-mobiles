@@ -63,7 +63,7 @@ function App() {
     <WishlistProvider>
       <CartProvider>
         <Router>
-          <div className="d-flex flex-column min-vh-100">
+          <div className="store-shell d-flex flex-column min-vh-100">
             <Routes>
 
               {/* 🌐 NORMAL WEBSITE */}
@@ -75,11 +75,7 @@ function App() {
                     {isMobile && <MobileTopBar />}
 
                     <main
-                      className="flex-grow-1"
-                      style={{
-                        paddingTop: isMobile ? "15px" : "35px",
-                        paddingBottom: isMobile ? "60px" : "0px",
-                      }}
+                      className={`store-shell__main flex-grow-1 site-main${isMobile ? " site-main--mobile" : ""}`}
                     >
                       <Routes>
                         <Route path="/" element={<Home />} />

@@ -87,17 +87,16 @@ export default function Products() {
   }
 
   return (
-    <div className="container mt-5 pt-4">
-      <h2 className="fw-bold mb-4" style={{ fontSize: "24px" }}>
-        Browse Products
-      </h2>
+    <div className="container py-4">
+      <p className="lux-eyebrow mb-1">Collection</p>
+      <h1 className="store-page-title">Browse products</h1>
 
       {/* ================= MOBILE TOP CONTROLS ================= */}
       {isMobile && (
         <>
           {/* 🔹 SEARCH + SORT (TOP) */}
-          <div className="d-flex gap-2 mb-2">
-            <div className="flex-grow-1">
+          <div className="d-flex gap-2 mb-2 align-items-stretch">
+            <div className="flex-grow-1 store-search">
               <div className="input-group input-group-sm">
                 <span className="input-group-text bg-white px-3">
                   <FiSearch />
@@ -159,15 +158,16 @@ export default function Products() {
         {/* ================= DESKTOP FILTER PANEL ================= */}
         {!isMobile && (
           <div className="col-md-3 col-lg-2 mb-4">
-            <div className="filter-card">
-              <h6 className="filter-title">Filters</h6>
+            <div className="store-filter-card">
+              <div className="store-filter-title">Filters</div>
 
-              <div className="filter-section">
-                <div className="filter-section-title">Category</div>
-                <div className="filter-list">
+              <div className="store-filter-section">
+                <div className="store-filter-label">Category</div>
+                <div className="store-filter-pills">
                   <button
-                    className={`filter-pill ${
-                      selectedCategory === "" ? "active" : ""
+                    type="button"
+                    className={`store-filter-pill${
+                      selectedCategory === "" ? " is-active" : ""
                     }`}
                     onClick={() => setSelectedCategory("")}
                   >
@@ -175,9 +175,10 @@ export default function Products() {
                   </button>
                   {categories.map((c) => (
                     <button
+                      type="button"
                       key={c._id}
-                      className={`filter-pill ${
-                        selectedCategory === c._id ? "active" : ""
+                      className={`store-filter-pill${
+                        selectedCategory === c._id ? " is-active" : ""
                       }`}
                       onClick={() => setSelectedCategory(c._id)}
                     >
@@ -187,9 +188,9 @@ export default function Products() {
                 </div>
               </div>
 
-              <div className="filter-section">
-                <div className="filter-section-title">Price Range</div>
-                <div className="filter-list">
+              <div className="store-filter-section">
+                <div className="store-filter-label">Price range</div>
+                <div className="store-filter-pills">
                   {[
                     { label: "₹0 - ₹5k", value: "0-5000" },
                     { label: "₹5k - ₹10k", value: "5000-10000" },
@@ -198,9 +199,10 @@ export default function Products() {
                     { label: "Above ₹100k", value: ">100000" },
                   ].map((r) => (
                     <button
+                      type="button"
                       key={r.value}
-                      className={`filter-pill ${
-                        priceRange === r.value ? "active" : ""
+                      className={`store-filter-pill${
+                        priceRange === r.value ? " is-active" : ""
                       }`}
                       onClick={() => setPriceRange(r.value)}
                     >
@@ -216,8 +218,8 @@ export default function Products() {
         {/* ================= PRODUCT GRID ================= */}
         <div className="col-md-9 col-lg-10">
           {!isMobile && (
-            <div className="d-flex justify-content-between align-items-center mb-3 gap-2">
-              <div style={{ maxWidth: "420px", width: "100%" }}>
+            <div className="d-flex justify-content-between align-items-center mb-3 gap-2 flex-wrap store-toolbar">
+              <div style={{ maxWidth: "420px", width: "100%" }} className="store-search">
                 <div className="input-group input-group-sm">
                   <span className="input-group-text bg-white px-3">
                     <FiSearch />
@@ -246,55 +248,76 @@ export default function Products() {
           )}
 
           {loading ? (
-            <p>Loading products...</p>
+            <p className="store-loading">Loading products…</p>
           ) : (
-            <div className="row g-3">
+            <div className="row g-3 g-md-4">
               {filtered.map((p) => (
                 <div key={p._id} className="col-6 col-md-4 col-lg-3">
                   <div
-                    className="m-product-card"
+                    role="link"
+                    tabIndex={0}
+                    className="store-product-card"
                     onClick={() => navigate(`/product/${p._id}`)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        navigate(`/product/${p._id}`);
+                      }
+                    }}
                   >
                     <button
-                      className="m-wish-btn"
+                      type="button"
+                      className="store-product-card__wish"
+                      aria-label={
+                        isInWishlist(p._id)
+                          ? "Remove from wishlist"
+                          : "Add to wishlist"
+                      }
                       onClick={(e) => {
                         e.stopPropagation();
                         toggleWishlist(p);
                       }}
                     >
                       <FiHeart
+                        size={18}
                         className={
-                          isInWishlist(p._id) ? "m-wish-active" : "m-wish"
+                          isInWishlist(p._id)
+                            ? "store-wish-ico is-active"
+                            : "store-wish-ico"
                         }
                       />
                     </button>
 
-                    <div className="m-img-wrap">
+                    <div className="store-product-card__media">
                       <img
                         src={p.images?.[0] || p.image || "/placeholder.png"}
                         alt={p.name}
-                        className="m-img"
+                        className="store-product-card__img"
                       />
                     </div>
 
-                    <div className="m-info">
-                      <div className="m-brand">{p.brand}</div>
-                      <div className="m-name">{p.name}</div>
-                      <div className="m-price-row">
-                        <span className="m-price">
-                          ₹{p.finalPrice ?? p.price}
+                    <div className="store-product-card__body">
+                      <div className="store-product-card__brand">{p.brand}</div>
+                      <div className="store-product-card__name">{p.name}</div>
+                      <div className="store-product-card__prices">
+                        <span className="store-product-card__price">
+                          ₹{Number(p.finalPrice ?? p.price).toLocaleString("en-IN")}
                         </span>
                         {p.discount > 0 && (
                           <>
-                            <span className="m-mrp">₹{p.price}</span>
-                            <span className="m-discount">
+                            <span className="store-product-card__mrp">
+                              ₹{Number(p.price).toLocaleString("en-IN")}
+                            </span>
+                            <span className="store-product-card__discount">
                               {p.discount}% OFF
                             </span>
                           </>
                         )}
                       </div>
                       {p.stock === 0 && (
-                        <div className="m-outstock">Out of Stock</div>
+                        <div className="store-product-card__stock">
+                          Out of stock
+                        </div>
                       )}
                     </div>
                   </div>
@@ -305,165 +328,6 @@ export default function Products() {
         </div>
       </div>
 
-      {/* Styles */}
-      <style>{`
-        /* FILTER CARD LEFT */
-        .filter-card {
-          background: #fff;
-          border-radius: 12px;
-          padding: 12px 12px 16px;
-          border: 1px solid #e4e4e4;
-        }
-        .filter-title {
-          font-size: 14px;
-          font-weight: 700;
-          margin-bottom: 10px;
-        }
-        .filter-section {
-          margin-bottom: 12px;
-        }
-        .filter-section-title {
-          font-size: 13px;
-          font-weight: 600;
-          margin-bottom: 6px;
-        }
-        .filter-list {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 6px;
-        }
-        .filter-pill {
-          border-radius: 999px;
-          border: 1px solid #ddd;
-          background: #fafafa;
-          padding: 3px 10px;
-          font-size: 12px;
-          cursor: pointer;
-          transition: 0.2s;
-        }
-        .filter-pill:hover {
-          background: #f0f0f0;
-        }
-        .filter-pill.active {
-          background: #111827;
-          border-color: #111827;
-          color: #fff;
-        }
-
-        .m-product-card {
-          background: #fff;
-          border: 1px solid #e6e6e6;
-          border-radius: 12px;
-          overflow: hidden;
-          position: relative;
-          transition: transform 0.2s ease, box-shadow 0.2s ease;
-          padding-bottom: 8px;
-        }
-        .m-product-card:hover {
-          transform: translateY(-4px);
-          box-shadow: 0 8px 20px rgba(0,0,0,0.08);
-        }
-
-        .m-wish-btn {
-          position: absolute;
-          top: 8px;
-          right: 8px;
-          z-index: 2;
-          background: #ffffffcc;
-          border-radius: 50%;
-          width: 30px;
-          height: 30px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border: none;
-          padding: 0;
-        }
-        .m-wish {
-          color: #999;
-        }
-        .m-wish-active {
-          color: #e63946;
-        }
-
-        .m-img-wrap {
-          width: 100%;
-          height: 220px;          /* FIXED HEIGHT */
-          background: #f7f7f7;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          overflow: hidden;
-        }
-
-        .m-img {
-          width: 100%;
-          height: 100%;
-          object-fit: contain;    /* or "cover" if you prefer */
-        }
-
-        .m-info {
-          padding: 6px 10px 10px;
-        }
-        .m-brand {
-          font-size: 13px;
-          font-weight: 600;
-          color: #222;
-          margin-bottom: 2px;
-        }
-        .m-name {
-          font-size: 12px;
-          color: #555;
-          margin: 0px 0 8px;
-          height: 32px;            /* FORCE SAME HEIGHT */
-          display: -webkit-box;
-          -webkit-line-clamp: 2;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
-        }
-
-        .m-price-row {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-        }
-        .m-price {
-          font-size: 15px;
-          font-weight: 700;
-          color: #111;
-        }
-
-        .m-mrp {
-          font-size: 12px;
-          color: #9ca3af;
-          text-decoration: line-through;   /* ✅ STRIKE */
-          text-decoration-thickness: 1.5px;
-        }
-
-        .m-discount {
-          font-size: 11px;
-          color: #1ba54a;
-          font-weight: 600;
-          // margin-left: auto;  /* pushes discount to right */
-        }
-
-        .m-outstock {
-          margin-top: 4px;
-          font-size: 11px;
-          color: #d9534f;
-          font-weight: 600;
-        }
-
-        .products-grid {
-          margin-top: 20px;
-        }
-
-        @media (max-width: 767px) {
-          .filter-card {
-            margin-bottom: 16px;
-          }
-        }
-      `}</style>
     </div>
   );
 }

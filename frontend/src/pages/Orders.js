@@ -167,7 +167,7 @@ const getStatus = (item) => {
         }
       },
 
-      theme: { color: "#111827" },
+      theme: { color: "#7d5f0c" },
     };
 
     new window.Razorpay(options).open();
@@ -254,20 +254,21 @@ const handleCancel = async (item) => {
   // ---------- AUTH GUARD PLACEHOLDER ----------
 if (!user) {
   return (
-    <div className="container mt-5 pt-4 order-page">
+    <div className="container py-5 order-page">
       <div className="text-center py-5">
         <FiPackage size={48} className="text-muted mb-3" />
-        <h4 className="fw-bold mb-2">Your Orders & Service Requests</h4>
+        <p className="lux-eyebrow">Account</p>
+        <h1 className="lux-heading-lg mb-2">Orders &amp; service</h1>
         <p className="text-muted mb-4">
           Login to track your orders, service requests, and download invoices.
         </p>
 
-        <div className="d-flex justify-content-center gap-3">
-          <Link to="/auth" className="btn btn-dark px-4">
+        <div className="d-flex justify-content-center gap-3 flex-wrap">
+          <Link to="/auth" className="store-btn-primary px-4">
             Login
           </Link>
-          <Link to="/products" className="btn btn-outline-dark px-4">
-            Browse Products
+          <Link to="/products" className="store-btn-ghost px-4">
+            Browse products
           </Link>
         </div>
       </div>
@@ -279,21 +280,22 @@ if (!user) {
   // ---------- Loading / empty ----------
   if (loading) {
     return (
-      <div className="container mt-5 pt-5 text-center">
-        <p>Loading your orders & service requests...</p>
+      <div className="container py-5 text-center">
+        <p className="text-muted">Loading your activity…</p>
       </div>
     );
   }
 
   if (!combined || combined.length === 0) {
     return (
-      <div className="container mt-5 pt-5 text-center">
-        <h3 className="fw-bold mb-2">Your Orders & Service Requests</h3>
+      <div className="container py-5 text-center">
+        <p className="lux-eyebrow">Activity</p>
+        <h1 className="lux-heading-lg mb-2">No orders yet</h1>
         <p className="text-muted mb-4">
           You haven&apos;t placed any orders or service requests yet.
         </p>
-        <Link to="/products" className="btn btn-dark">
-          Browse Products
+        <Link to="/products" className="store-btn-primary px-4">
+          Browse products
         </Link>
       </div>
     );
@@ -301,16 +303,16 @@ if (!user) {
 
   // ---------- Main UI ----------
   return (
-    <div className="container mt-5 pt-4 order-page">
-      {/* Header + Filters */}
-<div className="mb-3">
-  <h3 className="fw-bold mb-1">Your Activity</h3>
-  <small className="text-muted d-block mb-2">
-    {combined.length} record{combined.length > 1 ? "s" : ""} • Orders & Service Requests
-  </small>
+    <div className="container py-4 order-page">
+      <div className="mb-4">
+        <p className="lux-eyebrow mb-1">Activity</p>
+        <h1 className="store-page-title mb-1">Orders &amp; service</h1>
+        <small className="text-muted d-block mb-3">
+          {combined.length} record{combined.length > 1 ? "s" : ""} — orders &amp; service requests
+        </small>
 
-  <div className="d-flex flex-wrap gap-2">
-    <div className="btn-group btn-group-sm">
+  <div className="d-flex flex-wrap gap-2 align-items-center">
+    <div className="btn-group btn-group-sm lux-seg-toggle">
       <button
         className={`btn ${
           activeType === "orders" ? "btn-dark" : "btn-outline-dark"
@@ -357,8 +359,8 @@ if (!user) {
         </p>
 
         {activeType === "orders" && (
-          <Link to="/products" className="btn btn-dark btn-sm">
-            Browse Products
+          <Link to="/products" className="store-btn-primary btn-sm px-3 py-2">
+            Browse products
           </Link>
         )}
       </div>
@@ -626,70 +628,6 @@ if (!user) {
       )}
       </div>
 
-      {/* Local styles */}
-      <style>{`
-        .order-page {
-          padding-bottom: 32px;
-        }
-        .order-card {
-          background: #ffffff;
-          border-radius: 16px;
-          padding: 12px 14px;
-          border: 1px solid #edf0f7;
-          box-shadow: 0 10px 26px rgba(15, 23, 42, 0.06);
-          position: relative;
-          overflow: hidden;
-        }
-        .order-card::before {
-          content: "";
-          position: absolute;
-          top: -40px;
-          right: -40px;
-          width: 120px;
-          height: 120px;
-          background: radial-gradient(circle at center, #111827 0, transparent 60%);
-          opacity: 0.06;
-        }
-        .type-pill {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          padding: 2px 8px;
-          border-radius: 999px;
-          font-size: 10px;
-          background: linear-gradient(135deg, #111827, #4b5563);
-          color: #f9fafb;
-          box-shadow: 0 4px 10px rgba(15, 23, 42, 0.15);
-          opacity: 0.9;
-        }
-        .status-pill {
-          padding: 3px 10px;
-          border-radius: 999px;
-          font-size: 12px;
-          font-weight: 600;
-        }
-        .status-pill.success {
-          background: #dcfce7;
-          color: #166534;
-        }
-        .status-pill.danger {
-          background: #fee2e2;
-          color: #b91c1c;
-        }
-        .status-pill.warning {
-          background: #fef9c3;
-          color: #92400e;
-        }
-
-        @media (max-width: 576px) {
-          .order-card {
-              border-radius: 14px;
-            }
-            .status-pill {
-              font-size: 11px;
-            }
-        }
-      `}</style>
     </div>
   );
 }

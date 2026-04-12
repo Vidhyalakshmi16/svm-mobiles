@@ -12,37 +12,34 @@ const OrderSuccess = () => {
   const [loading, setLoading] = React.useState(true);
 
   useEffect(() => {
-  if (!orderId) {
-    navigate("/orders", { replace: true });
-    return;
-  }
-
-  const fetchOrder = async () => {
-    try {
-      const res = await fetch(
-        `${process.env.REACT_APP_API_URL}/orders/${orderId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
-
-      const data = await res.json();
-      setOrder(data);
-    } catch (err) {
-      console.error("Failed to load order", err);
-    } finally {
-      setLoading(false);
+    if (!orderId) {
+      navigate("/orders", { replace: true });
+      return;
     }
-  };
 
-  fetchOrder();
-}, [orderId, navigate]);
+    const fetchOrder = async () => {
+      try {
+        const res = await fetch(
+          `${process.env.REACT_APP_API_URL}/orders/${orderId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
 
+        const data = await res.json();
+        setOrder(data);
+      } catch (err) {
+        console.error("Failed to load order", err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    fetchOrder();
+  }, [orderId, navigate]);
 
-  // 🎉 Confetti animation (only if we actually have an order)
   useEffect(() => {
     if (!order) return;
 
@@ -55,12 +52,14 @@ const OrderSuccess = () => {
         angle: 60,
         spread: 55,
         origin: { x: 0 },
+        colors: ["#c9a227", "#e8d48b", "#fff8e7", "#7d5f0c"],
       });
       confetti({
         particleCount: 5,
         angle: 120,
         spread: 55,
         origin: { x: 1 },
+        colors: ["#c9a227", "#e8d48b", "#fff8e7", "#7d5f0c"],
       });
 
       if (Date.now() < end) {
@@ -68,142 +67,155 @@ const OrderSuccess = () => {
       }
     })();
   }, [order]);
-  
+
   if (loading) {
     return (
-      <div className="container mt-5 pt-5 text-center">
-        <h5>Loading your order…</h5>
+      <div className="container py-5 text-center">
+        <p className="lux-eyebrow">Order</p>
+        <p className="text-muted">Loading your confirmation…</p>
       </div>
     );
   }
 
-  // If user refreshes or lands here without order data
   if (!order) {
     return (
-      <div className="container mt-5 pt-5 text-center">
-        <h2 className="fw-bold mb-3">Order Placed</h2>
-        <p className="text-muted mb-4">
-          Your order is recorded, but we couldn’t load full details.
-        </p>
-        <button
-          className="btn btn-dark me-2"
-          onClick={() => navigate("/products")}
-        >
-          Continue Shopping
-        </button>
-        <button
-          className="btn btn-outline-secondary"
-          onClick={() => navigate("/")}
-        >
-          Go to Home
-        </button>
+      <div className="container py-5 text-center">
+        <div className="lux-empty-card">
+          <h1 className="lux-heading-lg mb-2">Thank you</h1>
+          <p className="text-muted mb-4">
+            Your order is recorded, but we couldn&apos;t load full details.
+          </p>
+          <div className="d-flex justify-content-center gap-2 flex-wrap">
+            <button
+              type="button"
+              className="store-btn-primary px-4"
+              onClick={() => navigate("/products")}
+            >
+              Continue shopping
+            </button>
+            <button
+              type="button"
+              className="store-btn-ghost px-4"
+              onClick={() => navigate("/")}
+            >
+              Home
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
 
-  // Safe to destructure now
   const { customer, paymentMethod, total, items } = order;
   const { name, address, city, pincode, phone } = customer || {};
 
   return (
-    <div className="container mt-5 pt-5 text-center">
-      {/* ✅ Success Icon */}
-      <div className="my-4">
+    <div className="container py-4 text-center">
+      <div className="my-4 d-flex justify-content-center">
         <div
-          className="d-inline-flex align-items-center justify-content-center rounded-circle bg-success shadow"
-          style={{ width: "90px", height: "90px" }}
+          className="d-inline-flex align-items-center justify-content-center rounded-circle"
+          style={{
+            width: 96,
+            height: 96,
+            background: "var(--lux-gradient-gold)",
+            border: "2px solid rgba(122,94,28,0.35)",
+            boxShadow: "0 12px 40px rgba(201,162,39,0.35)",
+          }}
         >
-          <i className="bi bi-check-lg text-white fs-1"></i>
+          <i className="bi bi-check-lg text-dark fs-1 fw-bold" />
         </div>
       </div>
 
-      <h2 className="fw-bold text-success mb-2">Order Placed Successfully!</h2>
-      <p className="text-muted mb-4 fs-5">
-        Thank you, {name}! Your order will be delivered soon 🚚
+      <p className="lux-eyebrow">Confirmed</p>
+      <h1 className="lux-heading-xl mb-2" style={{ color: "#166534" }}>
+        Order placed successfully
+      </h1>
+      <p className="lux-lead mx-auto mb-4">
+        Thank you, {name}. Your order will be processed right away.
       </p>
 
-      {/* 🧾 Order Summary */}
-      <div
-        className="card mx-auto shadow-sm border-0 text-start p-4 mb-4 rounded-4"
-        style={{ maxWidth: "650px" }}
-      >
-        <h5 className="fw-semibold mb-3">Order Details</h5>
+      <div className="store-panel mx-auto text-start p-4 p-md-5 mb-4" style={{ maxWidth: 640 }}>
+        <h2 className="lux-heading-lg fs-4 mb-3">Order details</h2>
 
-        <p>
+        <p className="mb-2">
           <strong>Name:</strong> {name}
         </p>
-        <p>
+        <p className="mb-2">
           <strong>Address:</strong> {address}, {city} - {pincode}
         </p>
-        <p>
+        <p className="mb-2">
           <strong>Phone:</strong> {phone}
         </p>
-        <p>
-          <strong>Payment Method:</strong> {paymentMethod}
+        <p className="mb-2">
+          <strong>Payment:</strong> {paymentMethod}
         </p>
-        <p className="fw-bold text-success fs-5">
+        <p className="fw-bold fs-5 mb-0" style={{ color: "var(--lux-ink)" }}>
           Total: ₹{total?.toLocaleString("en-IN")}
         </p>
 
-        {/* 🛍️ Ordered Products Summary */}
-        <div className="mt-4">
-          <h6 className="fw-semibold mb-3">Ordered Items</h6>
-          {items && items.length > 0 ? (
-            <ul className="list-group border-0">
-              {items.map((item, index) => {
-                const unit = item.finalPrice ?? item.price ?? 0;
-                const qty = item.quantity ?? 0;
-                const linePrice = unit * qty;
+        <div className="lux-divider" />
 
-                return (
-                  <li
-                    key={item._id || index}
-                    className="list-group-item d-flex justify-content-between align-items-center border-0 ps-0 py-2"
-                    style={{ background: "transparent" }}
-                  >
-                    <div className="d-flex align-items-center">
-                      {item.image && (
-                        <img
-                          src={item.image}
-                          alt={item.name}
-                          className="me-3 rounded"
-                          style={{
-                            width: "50px",
-                            height: "50px",
-                            objectFit: "cover",
-                          }}
-                        />
-                      )}
-                      <div>
-                        <p className="mb-0 fw-medium">{item.name}</p>
-                        <small className="text-muted">
-                          Qty: {qty} × ₹{unit.toLocaleString("en-IN")}
-                        </small>
-                      </div>
+        <h3 className="lux-heading-lg fs-5 mb-3">Items</h3>
+        {items && items.length > 0 ? (
+          <ul className="list-unstyled mb-0">
+            {items.map((item, index) => {
+              const unit = item.finalPrice ?? item.price ?? 0;
+              const qty = item.quantity ?? 0;
+              const linePrice = unit * qty;
+
+              return (
+                <li
+                  key={item._id || index}
+                  className="d-flex justify-content-between align-items-center py-3 border-bottom"
+                  style={{ borderColor: "var(--lux-border)" }}
+                >
+                  <div className="d-flex align-items-center gap-3">
+                    {item.image && (
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                        className="rounded-3"
+                        style={{
+                          width: 52,
+                          height: 52,
+                          objectFit: "cover",
+                          border: "1px solid var(--lux-border)",
+                        }}
+                      />
+                    )}
+                    <div>
+                      <p className="mb-0 fw-semibold">{item.name}</p>
+                      <small className="text-muted">
+                        Qty {qty} × ₹{unit.toLocaleString("en-IN")}
+                      </small>
                     </div>
-                    <span className="fw-semibold text-dark">
-                      ₹{linePrice.toLocaleString("en-IN")}
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
-          ) : (
-            <p>No items found.</p>
-          )}
-        </div>
+                  </div>
+                  <span className="fw-bold">
+                    ₹{linePrice.toLocaleString("en-IN")}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <p className="text-muted mb-0">No line items.</p>
+        )}
       </div>
 
-      {/* 🔘 Buttons */}
-      <div className="d-flex justify-content-center gap-3">
+      <div className="d-flex justify-content-center gap-3 flex-wrap">
         <button
-          className="btn btn-outline-dark px-4"
+          type="button"
+          className="store-btn-ghost px-4"
           onClick={() => navigate("/products")}
         >
-          Continue Shopping
+          Continue shopping
         </button>
-        <button className="btn btn-dark px-4" onClick={() => navigate("/")}>
-          Go to Home
+        <button
+          type="button"
+          className="store-btn-primary px-4"
+          onClick={() => navigate("/")}
+        >
+          Back home
         </button>
       </div>
     </div>

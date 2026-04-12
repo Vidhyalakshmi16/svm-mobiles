@@ -7,6 +7,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import "./MobileChrome.css";
 
 function MobileTopBar() {
   const { user, logout } = useAuth();
@@ -32,118 +33,57 @@ function MobileTopBar() {
   };
 
   return (
-    <div
-      style={{
-        position: "fixed",
-        top: 0,
-        width: "100%",
-        height: "56px",
-        background: "#fff",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        padding: "0 14px",
-        boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
-        zIndex: 1000,
-      }}
-    >
-      {/* BRAND */}
-      <Link
-        to="/"
-        style={{
-          fontWeight: 700,
-          fontSize: "1.1rem",
-          color: "#000",
-          textDecoration: "none",
-        }}
-      >
+    <header className="mobile-topbar">
+      <Link className="mobile-topbar__brand" to="/">
         Sri Vaari Mobiles
       </Link>
 
-      {/* RIGHT ICONS */}
-      <div
-        style={{
-          position: "relative",
-          display: "flex",
-          gap: "14px",
-          alignItems: "center",
-        }}
-      >
-        {/* WISHLIST */}
-        <Link to="/wishlist">
-          <Heart size={22} color="#e11d48" />
+      <div className="mobile-topbar__icons">
+        <Link to="/wishlist" className="mobile-topbar__icon-link" aria-label="Wishlist">
+          <Heart size={22} strokeWidth={2} />
         </Link>
 
-        {/* ADMIN ICON (ONLY FOR ADMIN) */}
         {user?.role === "admin" && (
           <Link
             to="/admin/dashboard"
             onClick={() => setOpen(false)}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: 34,
-              height: 34,
-              borderRadius: "50%",
-              background: "#facc15",
-              color: "#111",
-            }}
+            className="mobile-topbar__admin"
+            aria-label="Admin"
           >
             <ShieldCheck size={18} />
           </Link>
         )}
 
-        {/* AVATAR */}
         {user ? (
           <>
             <div
+              role="button"
+              tabIndex={0}
               onClick={() => setOpen(!open)}
-              style={{
-                width: 34,
-                height: 34,
-                borderRadius: "50%",
-                background: avatarColor,
-                color: "#fff",
-                fontWeight: 700,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: "pointer",
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") setOpen(!open);
               }}
+              className="mobile-topbar__avatar"
+              style={{ background: avatarColor }}
             >
               {getInitial()}
             </div>
 
-            {/* DROPDOWN */}
             {open && (
-              <div
-                style={{
-                  position: "absolute",
-                  top: "44px",
-                  right: 0,
-                  width: "200px",
-                  background: "#fff",
-                  borderRadius: "10px",
-                  boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
-                  padding: "8px 0",
-                  zIndex: 2000,
-                }}
-              >
-                {/* USER INFO */}
+              <div className="mobile-topbar__menu">
                 <div style={{ padding: "8px 14px" }}>
-                  <div style={{ fontSize: "12px", color: "#6b7280" }}>
+                  <div style={{ fontSize: "12px", color: "var(--store-muted)" }}>
                     Signed in as
                   </div>
-                  <div style={{ fontWeight: 600, fontSize: "14px" }}>
+                  <div style={{ fontWeight: 600, fontSize: "14px", color: "var(--store-text)" }}>
                     {user.name || user.email}
                   </div>
                 </div>
 
-                <hr style={{ margin: "6px 0" }} />
+                <hr style={{ margin: "6px 0", borderColor: "var(--store-border)" }} />
 
-                {/* LOGOUT */}
                 <button
+                  type="button"
                   onClick={handleLogout}
                   style={{
                     width: "100%",
@@ -168,11 +108,11 @@ function MobileTopBar() {
           <UserCircle
             size={28}
             onClick={() => navigate("/auth")}
-            style={{ cursor: "pointer" }}
+            style={{ cursor: "pointer", color: "var(--store-muted)" }}
           />
         )}
       </div>
-    </div>
+    </header>
   );
 }
 

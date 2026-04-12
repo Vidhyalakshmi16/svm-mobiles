@@ -68,22 +68,29 @@ export default function ReturnOrder() {
   };
 
   return (
-    <div className="container mt-5 pt-4">
-      <h4 className="fw-bold mb-3">Return Product</h4>
+    <div className="container py-4">
+      <p className="lux-eyebrow mb-1">Returns</p>
+      <h1 className="store-page-title mb-3">Return a product</h1>
 
-      {/* 🔴 Return Rules */}
-      <div className="alert alert-warning small">
-        <b>Return Policy</b>
-        <ul className="mb-0">
+      <div
+        className="rounded-3 p-3 p-md-4 mb-4 small"
+        style={{
+          background: "linear-gradient(135deg, rgba(254,243,199,0.85), rgba(255,251,235,0.95))",
+          border: "1px solid rgba(180,83,9,0.25)",
+          color: "#78350f",
+        }}
+      >
+        <strong className="d-block mb-2">Return policy</strong>
+        <ul className="mb-0 ps-3">
           <li>Only delivered items can be returned</li>
-          <li>Refund will be only for product value (no delivery & platform fee)</li>
+          <li>Refund covers product value only (not delivery or platform fee)</li>
           <li>Product images are mandatory</li>
           <li>Unboxing video is optional but recommended</li>
           <li>You must courier the product back after approval</li>
         </ul>
       </div>
 
-      <div className="card p-3 shadow-sm rounded-4">
+      <div className="store-panel p-4 lux-form">
 
         <div className="mb-3">
           <label className="form-label">Your Name *</label>
@@ -139,19 +146,17 @@ export default function ReturnOrder() {
                     }}
                   />
                   <button
-                    onClick={() => removeImage(i)}
+                    type="button"
+                    className="position-absolute top-0 end-0 m-1 border-0 rounded-circle text-white small fw-bold"
                     style={{
-                      position: "absolute",
-                      top: -5,
-                      right: -5,
-                      background: "red",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "50%",
-                      width: 22,
-                      height: 22,
+                      width: 26,
+                      height: 26,
+                      background: "#b91c1c",
                       cursor: "pointer",
+                      lineHeight: 1,
                     }}
+                    onClick={() => removeImage(i)}
+                    aria-label="Remove image"
                   >
                     ×
                   </button>
@@ -173,11 +178,12 @@ export default function ReturnOrder() {
         </div>
 
         <button
-          className="btn btn-danger w-100"
+          type="button"
+          className="store-btn-primary w-100 mt-2"
           disabled={loading}
           onClick={submitReturn}
         >
-          {loading ? "Submitting..." : "Submit Return Request"}
+          {loading ? "Submitting…" : "Submit return request"}
         </button>
       </div>
     </div>
