@@ -20,7 +20,7 @@
   left: 0;
   right: 0;
   height: 4px;
-  background: var(--lux-gradient-gold);
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
 }
 
 .lux-cart-card {
@@ -35,7 +35,7 @@
   display: flex;
   align-items: flex-start;
   padding: 1rem 0.25rem;
-  border-bottom: 1px solid rgba(122, 94, 28, 0.1);
+  border-bottom: 1px solid rgba(99,102,241,0.12);
 }
 
 .lux-cart-item:last-of-type {
@@ -46,13 +46,13 @@
   width: 80px;
   height: 80px;
   border-radius: 0.85rem;
-  background: var(--lux-gradient-gold-subtle);
+  background: linear-gradient(135deg, rgba(79,70,229,0.08), rgba(124,58,237,0.05));
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
   flex-shrink: 0;
-  border: 1px solid var(--lux-border);
+  border: 1px solid rgba(99,102,241,0.12);
 }
 
 .lux-cart-item__img img {
@@ -66,7 +66,7 @@
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--lux-gold-mid);
+  color: #7c3aed;
 }
 
 .lux-cart-item__name {
@@ -90,7 +90,7 @@
 }
 
 .lux-qty button {
-  background: linear-gradient(180deg, #fffef9, #f5efe6);
+  background: linear-gradient(180deg, #ffffff, #f8faff);
   border: none;
   width: 34px;
   height: 32px;
@@ -100,12 +100,12 @@
   font-size: 1.1rem;
   line-height: 1;
   cursor: pointer;
-  color: var(--lux-ink);
+  color: var(--c-ink);
   transition: background var(--store-t-fast);
 }
 
 .lux-qty button:hover:not(:disabled) {
-  background: var(--lux-ivory-mid);
+  background: #f0f4ff;
 }
 
 .lux-qty button:disabled {
@@ -215,14 +215,14 @@
   left: 0;
   right: 0;
   height: 3px;
-  background: var(--lux-gradient-gold);
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
   opacity: 0.7;
 }
 
 .lux-service-card:hover {
   transform: translateY(-6px);
-  box-shadow: var(--store-shadow-card-hover);
-  border-color: rgba(201, 162, 39, 0.35);
+  box-shadow: 0 14px 40px rgba(79,70,229,0.18);
+  border-color: rgba(79,70,229,0.3);
 }
 
 .lux-service-card__icon {
@@ -233,16 +233,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--lux-gradient-gold-subtle);
-  border: 1px solid var(--lux-border);
-  color: var(--lux-gold-mid);
+  background: linear-gradient(135deg, rgba(79,70,229,0.08), rgba(124,58,237,0.05));
+  border: 1px solid rgba(99,102,241,0.12);
+  color: #7c3aed;
 }
 
 .lux-service-card h3 {
-  font-family: var(--font-display);
+  font-family: var(--font-sans);
   font-size: 1.35rem;
   font-weight: 600;
-  color: var(--lux-ink);
+  color: var(--c-ink);
   margin-bottom: 0.5rem;
 }
 

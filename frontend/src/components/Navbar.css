@@ -1,26 +1,22 @@
-/* Premium nav — warm onyx + gold */
+/* Light Ice Blue + Purple nav */
 .site-navbar {
   --nav-h: var(--store-nav-height);
   min-height: var(--nav-h);
   padding-top: 0.55rem !important;
   padding-bottom: 0.55rem !important;
-  background: linear-gradient(
-    180deg,
-    rgba(18, 14, 10, 0.97) 0%,
-    rgba(12, 10, 8, 0.96) 100%
-  ) !important;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid rgba(201, 162, 39, 0.28);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  background: rgba(255, 255, 255, 0.88) !important;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(99,102,241,0.12);
+  box-shadow: 0 2px 8px rgba(79,70,229,0.07);
 }
 
 .site-navbar .navbar-brand {
-  font-family: var(--font-display);
-  font-weight: 600;
+  font-family: var(--font-sans);
+  font-weight: 800;
   font-size: 1.35rem;
   letter-spacing: 0.02em;
-  background: linear-gradient(135deg, #fff8e7 0%, #e8d48b 55%, #c9a227 100%);
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -39,14 +35,14 @@
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: rgba(250, 245, 235, 0.82) !important;
+  color: #6b7280 !important;
   padding: 0.5rem 0.65rem !important;
   transition: color var(--store-t-fast);
 }
 
 .site-navbar .nav-link:hover,
 .site-navbar .nav-link:focus {
-  color: #fff6d8 !important;
+  color: #4f46e5 !important;
 }
 
 .site-navbar .nav-link::after {
@@ -57,19 +53,10 @@
   bottom: 0.15rem;
   height: 2px;
   border-radius: 2px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    var(--lux-gold-mid),
-    var(--lux-gold-light),
-    var(--lux-gold-mid),
-    transparent
-  );
+  background: linear-gradient(90deg, transparent, #4f46e5, #7c3aed, #4f46e5, transparent);
   opacity: 0;
   transform: scaleX(0.5);
-  transition:
-    opacity var(--store-t-fast),
-    transform var(--store-t);
+  transition: opacity var(--store-t-fast), transform var(--store-t);
 }
 
 .site-navbar .nav-link:hover::after {
@@ -78,20 +65,20 @@
 }
 
 .site-navbar .navbar-toggler {
-  border-color: rgba(201, 162, 39, 0.35);
+  border-color: rgba(79,70,229,0.3);
   padding: 0.35rem 0.6rem;
 }
 
 .site-navbar .navbar-toggler:focus {
-  box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.25);
+  box-shadow: 0 0 0 3px rgba(79,70,229,0.15);
 }
 
 .site-navbar .dropdown-menu {
-  border: 1px solid var(--lux-border);
+  border: 1px solid rgba(99,102,241,0.12);
   border-radius: var(--store-radius);
   box-shadow: var(--store-shadow-md);
   padding: 0.4rem 0;
-  background: var(--lux-paper);
+  background: var(--c-surface);
 }
 
 .site-navbar .dropdown-item {

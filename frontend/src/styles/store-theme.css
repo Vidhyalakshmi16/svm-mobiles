@@ -1,87 +1,74 @@
-/* ── Sri Vaari — Luxe Ivory & Gold (single premium theme site-wide) ── */
-@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap");
+/* ── Sri Vaari — Light Ice Blue + Purple Theme ── */
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap");
 
 :root {
-  --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
-  --font-display: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
 
   --store-nav-height: 4.75rem;
   --store-mobile-top: 3.5rem;
   --store-mobile-bottom: 3.75rem;
 
-  /* Luxe palette */
-  --lux-ink: #161311;
-  --lux-ink-soft: #2a2622;
-  --lux-muted: #6e6862;
-  --lux-faint: #a39a92;
+  /* Ice Blue + Purple palette */
+  --c-bg: #f0f4ff;
+  --c-surface: #ffffff;
+  --c-surface2: #f8faff;
+  --c-indigo: #4f46e5;
+  --c-purple: #7c3aed;
+  --c-grad: linear-gradient(135deg, #4f46e5, #7c3aed);
+  --c-grad-soft: linear-gradient(135deg, rgba(79,70,229,0.08), rgba(124,58,237,0.05));
+  --c-ink: #1e1b4b;
+  --c-muted: #6b7280;
+  --c-hint: #9ca3af;
+  --c-border: rgba(99,102,241,0.12);
+  --c-border-strong: rgba(79,70,229,0.3);
+  --c-ring: rgba(79,70,229,0.25);
+  --c-shadow-sm: 0 2px 8px rgba(79,70,229,0.07);
+  --c-shadow-md: 0 8px 28px rgba(79,70,229,0.12);
+  --c-shadow-hover: 0 14px 40px rgba(79,70,229,0.18);
+  --c-radius: 12px;
+  --c-radius-lg: 16px;
+  --c-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --c-t: 0.35s var(--c-ease);
 
-  --lux-ivory: #f7f3eb;
-  --lux-ivory-mid: #ebe4d8;
-  --lux-paper: #fffef9;
-  --lux-gold: #9a7209;
-  --lux-gold-mid: #c9a227;
-  --lux-gold-light: #e8d48b;
-  --lux-gold-glow: rgba(201, 162, 39, 0.22);
+  /* Legacy aliases — keeps existing components working */
+  --store-bg: var(--c-bg);
+  --store-bg-subtle: var(--c-grad-soft);
+  --store-surface: var(--c-surface);
+  --store-text: var(--c-ink);
+  --store-muted: var(--c-muted);
+  --store-border: var(--c-border);
+  --store-ring: var(--c-ring);
+  --store-accent: var(--c-indigo);
+  --store-accent-soft: rgba(79,70,229,0.07);
+  --store-shadow-sm: var(--c-shadow-sm);
+  --store-shadow-md: var(--c-shadow-md);
+  --store-shadow-card-hover: var(--c-shadow-hover);
+  --store-radius: var(--c-radius);
+  --store-radius-lg: var(--c-radius-lg);
+  --store-ease: var(--c-ease);
+  --store-t: var(--c-t);
+  --store-t-fast: 0.2s var(--c-ease);
 
-  --lux-gradient-page: linear-gradient(
-    165deg,
-    #faf6ef 0%,
-    #f0e9de 40%,
-    #e8dfd2 100%
-  );
-  --lux-gradient-gold: linear-gradient(
-    135deg,
-    #7d5f0c 0%,
-    #b8860b 38%,
-    #d4af37 72%,
-    #e8d48b 100%
-  );
-  --lux-gradient-gold-subtle: linear-gradient(
-    135deg,
-    rgba(184, 134, 11, 0.12) 0%,
-    rgba(232, 212, 139, 0.08) 100%
-  );
-
-  --lux-border: rgba(122, 94, 28, 0.14);
-  --lux-border-strong: rgba(122, 94, 28, 0.28);
-  --lux-ring: rgba(201, 162, 39, 0.35);
-
-  /* Legacy aliases (used across existing components) */
-  --store-bg: var(--lux-ivory);
-  --store-bg-subtle: var(--lux-gradient-page);
-  --store-surface: var(--lux-paper);
-  --store-text: var(--lux-ink);
-  --store-muted: var(--lux-muted);
-  --store-border: var(--lux-border);
-  --store-ring: var(--lux-ring);
-  --store-accent: var(--lux-ink);
-  --store-accent-soft: rgba(22, 18, 15, 0.06);
-
-  --store-shadow-sm: 0 1px 0 rgba(255, 255, 255, 0.65) inset,
-    0 2px 8px rgba(22, 18, 15, 0.05);
-  --store-shadow-md: 0 8px 32px rgba(22, 18, 15, 0.08),
-    0 2px 8px rgba(22, 18, 15, 0.04);
-  --store-shadow-card-hover: 0 20px 50px rgba(22, 18, 15, 0.12),
-    0 0 0 1px rgba(201, 162, 39, 0.12);
-
-  --store-radius: 1rem;
-  --store-radius-lg: 1.35rem;
-  --store-ease: cubic-bezier(0.22, 1, 0.36, 1);
-  --store-t: 0.4s var(--store-ease);
-  --store-t-fast: 0.2s var(--store-ease);
+  /* Old gold aliases → remap to purple */
+  --lux-ink: var(--c-ink);
+  --lux-ivory: var(--c-bg);
+  --lux-paper: var(--c-surface);
+  --lux-gold: var(--c-indigo);
+  --lux-gold-mid: var(--c-purple);
+  --lux-gold-light: rgba(124,58,237,0.15);
+  --lux-gradient-page: var(--c-grad-soft);
+  --lux-gradient-gold: var(--c-grad);
+  --lux-border: var(--c-border);
 }
 
-html {
-  scroll-behavior: smooth;
-}
+html { scroll-behavior: smooth; }
 
 body {
   font-family: var(--font-sans);
-  background: var(--lux-gradient-page);
-  background-color: var(--lux-ivory);
-  color: var(--lux-ink);
+  background: var(--c-bg);
+  color: var(--c-ink);
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Optional full-page wrapper */

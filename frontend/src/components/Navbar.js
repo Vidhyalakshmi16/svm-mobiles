@@ -41,7 +41,13 @@ function Navbar() {
 
 
   return (
-    <nav className="site-navbar navbar navbar-expand-lg navbar-dark fixed-top px-3 px-lg-4">
+    <>
+      {/* Announcement Bar */}
+      <div style={{background:'linear-gradient(90deg,#4f46e5,#7c3aed)',padding:'6px 20px',display:'flex',justifyContent:'space-between',fontSize:'11px',color:'#fff',fontWeight:600,textAlign:'center'}}>
+        <span>⚡ Free delivery above ₹999 · No Cost EMI available</span>
+        <span>Salem's #1 Mobile Store</span>
+      </div>
+      <nav className="site-navbar navbar navbar-expand-lg navbar-dark fixed-top px-3 px-lg-4" style={{top:'32px'}}>
       <Link className="navbar-brand" to="/">
         Sri Vaari Mobiles
       </Link>
@@ -141,6 +147,7 @@ function Navbar() {
                   closeNavbar();
                   navigate("/auth");
                 }}
+                style={{background: 'linear-gradient(135deg,#4f46e5,#7c3aed)', color: 'white', border: 'none', borderRadius: '20px', boxShadow: '0 4px 14px rgba(79,70,229,0.28)', fontWeight: 700, padding: '8px 20px'}}
               >
                 Login
               </button>
@@ -224,6 +231,7 @@ function Navbar() {
         </ul>
       </div>
     </nav>
+    </>
   );
 }
 
