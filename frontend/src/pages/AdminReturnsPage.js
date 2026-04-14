@@ -4,7 +4,6 @@ import axios from "../services/axiosInstance";
 export default function AdminReturnsPage() {
   const [returns, setReturns] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [expandedId, setExpandedId] = useState(null);
 
   const fetchReturns = async () => {
     try {
