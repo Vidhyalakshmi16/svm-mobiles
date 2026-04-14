@@ -105,19 +105,47 @@ router.patch("/admin/:id/status", protect, async (req, res) => {
 
     if (!ret) return res.status(404).json({ message: "Return not found" });
 
+    const order = ret.orderId;
     ret.status = status;
     await ret.save();
 
-    // EMAIL WHEN APPROVED
+    // WHEN APPROVED - prepare for refund
     if (status === "APPROVED") {
+      // Calculate refund amount (product total only, not delivery/platform fees)
+      const refundAmount = order.items.reduce((sum, item) => sum + (item.finalPrice * item.quantity), 0);
+
+      order.status = "REFUND_PROCESSING";
+      order.refundAmount = refundAmount;
+      order.refundReason = "Product returned by customer";
+      await order.save();
+
       await sendEmail({
         to: ret.userId.email,
         subject: "Return Approved",
         html: `
           <h2>Your return has been approved</h2>
           <p>Order #${String(ret.orderId._id).slice(-8)}</p>
+          <p><strong>Refund Amount:</strong> ₹${refundAmount.toLocaleString("en-IN")}</p>
           <p>Please courier the product to our warehouse.</p>
           <p>Once received, your refund will be processed.</p>
+          <br/>
+          <b>Sri Vaari Mobiles</b>
+        `,
+      });
+    }
+
+    // WHEN REJECTED - revert order to completed status
+    if (status === "REJECTED") {
+      order.status = "COMPLETED";
+      await order.save();
+
+      await sendEmail({
+        to: ret.userId.email,
+        subject: "Return Request Rejected",
+        html: `
+          <h2>Your return request has been rejected</h2>
+          <p>Order #${String(ret.orderId._id).slice(-8)}</p>
+          <p>Your return could not be processed at this time.</p>
           <br/>
           <b>Sri Vaari Mobiles</b>
         `,
