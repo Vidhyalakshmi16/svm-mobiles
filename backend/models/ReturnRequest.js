@@ -65,12 +65,11 @@ const returnRequestSchema = new mongoose.Schema(
 
     // Warehouse/Return address
     warehouseAddress: {
-      name: String,
-      phone: String,
-      address: String,
-      city: String,
-      pincode: String,
-      default: "",
+      name: { type: String, default: "" },
+      phone: { type: String, default: "" },
+      address: { type: String, default: "" },
+      city: { type: String, default: "" },
+      pincode: { type: String, default: "" },
     },
 
     // Refund details
