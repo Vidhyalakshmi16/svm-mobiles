@@ -36,17 +36,28 @@ router.post(
     try {
       const { orderId, reason, video, name, phone } = req.body;
 
+      console.log("📦 Return request received:", { orderId, name, phone, reason, hasVideo: !!video, fileCount: req.files?.length });
+
       const order = await Order.findById(orderId);
-      if (!order) return res.status(404).json({ message: "Order not found" });
+      if (!order) {
+        console.error("❌ Order not found:", orderId);
+        return res.status(404).json({ message: "Order not found" });
+      }
 
-      if (order.user.toString() !== req.user.userId)
+      if (order.user.toString() !== req.user.userId) {
+        console.error("❌ Not user's order. Order user:", order.user, "Request user:", req.user.userId);
         return res.status(403).json({ message: "Not your order" });
+      }
 
-      if (order.status !== "COMPLETED")
-        return res.status(400).json({ message: "Return not allowed" });
+      if (order.status !== "COMPLETED") {
+        console.error("❌ Return not allowed. Order status:", order.status);
+        return res.status(400).json({ message: `Return not allowed. Order status is ${order.status}` });
+      }
 
-      if (!req.files || req.files.length === 0)
+      if (!req.files || req.files.length === 0) {
+        console.error("❌ No images uploaded");
         return res.status(400).json({ message: "Product images required" });
+      }
 
       // convert uploaded files → URLs
       const images = req.files.map((f) => `/uploads/returns/${f.filename}`);
@@ -66,10 +77,11 @@ router.post(
       order.status = "RETURNED";
       await order.save();
 
+      console.log("✅ Return request created:", ret._id);
       res.json({ message: "Return request submitted", ret });
     } catch (err) {
-      console.error("Return create error:", err);
-      res.status(500).json({ message: "Return request failed" });
+      console.error("❌ Return create error:", err.message);
+      res.status(500).json({ message: `Return request failed: ${err.message}` });
     }
   }
 );

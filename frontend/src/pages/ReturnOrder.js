@@ -55,13 +55,17 @@ export default function ReturnOrder() {
 
       images.forEach((img) => fd.append("images", img));
 
-      await api.post("/returns", fd);
+      console.log("📤 Submitting return request for order:", orderId, "with", images.length, "images");
 
+      const response = await api.post("/returns", fd);
+
+      console.log("✅ Return submitted successfully:", response.data);
       alert("Return request submitted. Please courier the product back.");
       navigate("/orders");
     } catch (err) {
-      console.error(err);
-      alert(err.response?.data?.message || "Return request failed");
+      console.error("❌ Return submission error:", err);
+      const errorMsg = err.response?.data?.message || err.message || "Return request failed";
+      alert(errorMsg);
     } finally {
       setLoading(false);
     }
