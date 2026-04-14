@@ -25,8 +25,18 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
+// Warehouse address (can be configured in environment variable)
+const WAREHOUSE_ADDRESS = {
+  name: "Sri Vaari Mobiles Warehouse",
+  phone: process.env.WAREHOUSE_PHONE || "+91-XXXX-XXXX-XX",
+  address: process.env.WAREHOUSE_ADDRESS || "Warehouse, Plot No. XYZ",
+  city: process.env.WAREHOUSE_CITY || "Hyderabad",
+  pincode: process.env.WAREHOUSE_PINCODE || "500001",
+};
+
 /* =========================================
    CUSTOMER – Create Return Request
+   Status: PROCESSING
 ========================================= */
 router.post(
   "/",
@@ -38,14 +48,14 @@ router.post(
 
       console.log("📦 Return request received:", { orderId, name, phone, reason, hasVideo: !!video, fileCount: req.files?.length });
 
-      const order = await Order.findById(orderId);
+      const order = await Order.findById(orderId).populate("user", "email");
       if (!order) {
         console.error("❌ Order not found:", orderId);
         return res.status(404).json({ message: "Order not found" });
       }
 
-      if (order.user.toString() !== req.user.userId) {
-        console.error("❌ Not user's order. Order user:", order.user, "Request user:", req.user.userId);
+      if (order.user._id.toString() !== req.user.userId) {
+        console.error("❌ Not user's order. Order user:", order.user._id, "Request user:", req.user.userId);
         return res.status(403).json({ message: "Not your order" });
       }
 
@@ -65,20 +75,32 @@ router.post(
       const ret = await ReturnRequest.create({
         orderId,
         userId: req.user.userId,
+        email: order.user.email,
         name,
         phone,
         reason,
         images,
         video,
-        status: "REQUESTED",
+        status: "PROCESSING", // ✅ NEW: Status is PROCESSING (admin reviewing)
       });
 
-      // DO NOT mark order as refunded yet
-      order.status = "RETURNED";
-      await order.save();
+      console.log("✅ Return request created:", ret._id, "Status: PROCESSING");
+      
+      // Send email to customer
+      await sendEmail({
+        to: order.user.email,
+        subject: "Return Request Received - Processing",
+        html: `
+          <h2>Your return request has been received</h2>
+          <p>Order #${String(orderId).slice(-8)}</p>
+          <p><strong>Status:</strong> Processing</p>
+          <p>Our team is reviewing your request. You will be notified once it's approved.</p>
+          <br/>
+          <b>Sri Vaari Mobiles</b>
+        `,
+      });
 
-      console.log("✅ Return request created:", ret._id);
-      res.json({ message: "Return request submitted", ret });
+      res.json({ message: "Return request submitted. Awaiting admin review.", ret });
     } catch (err) {
       console.error("❌ Return create error:", err.message);
       res.status(500).json({ message: `Return request failed: ${err.message}` });
@@ -88,86 +110,183 @@ router.post(
 
 /* =========================================
    ADMIN – Get all return requests
+   Shows user details, images, and reason
 ========================================= */
 router.get("/admin", protect, async (req, res) => {
-  if (req.user.role !== "admin")
-    return res.status(403).json({ message: "Admin only" });
+  try {
+    if (req.user.role !== "admin")
+      return res.status(403).json({ message: "Admin only" });
 
-  const returns = await ReturnRequest.find()
-    .populate("orderId")
-    .populate("userId")
-    .sort({ createdAt: -1 });
+    const returns = await ReturnRequest.find()
+      .populate("orderId", "total items -_id")
+      .populate("userId", "name email phone address -_id")
+      .populate("refundProcessedBy", "name email -_id")
+      .sort({ createdAt: -1 });
 
-  res.json(returns);
+    console.log("📋 Fetched", returns.length, "return requests");
+    res.json(returns);
+  } catch (err) {
+    console.error("❌ Fetch returns error:", err.message);
+    res.status(500).json({ message: "Failed to fetch returns" });
+  }
 });
 
 /* =========================================
    ADMIN – Update return status
+   Handles: RETURN_REQUEST_APPROVED, RECEIVED, REFUNDED, REJECTED
 ========================================= */
 router.patch("/admin/:id/status", protect, async (req, res) => {
   try {
     if (req.user.role !== "admin")
       return res.status(403).json({ message: "Admin only" });
 
-    const { status } = req.body;
+    const { status, note } = req.body;
+
+    console.log("🔄 Updating return status:", req.params.id, "→", status);
 
     const ret = await ReturnRequest.findById(req.params.id)
       .populate("orderId")
       .populate("userId");
 
-    if (!ret) return res.status(404).json({ message: "Return not found" });
+    if (!ret) {
+      console.error("❌ Return not found:", req.params.id);
+      return res.status(404).json({ message: "Return not found" });
+    }
 
     const order = ret.orderId;
     ret.status = status;
-    await ret.save();
+    if (note) ret.adminNote = note;
 
-    // WHEN APPROVED - prepare for refund
-    if (status === "APPROVED") {
+    // ✅ ADMIN APPROVES - Send warehouse address
+    if (status === "RETURN_REQUEST_APPROVED") {
+      console.log("✅ Return approved. Sending warehouse address...");
+
       // Calculate refund amount (product total only, not delivery/platform fees)
       const refundAmount = order.items.reduce((sum, item) => sum + (item.finalPrice * item.quantity), 0);
+      
+      ret.refundAmount = refundAmount;
+      ret.refundApprovedBy = req.user.userId;
+      ret.refundApprovedAt = new Date();
+      ret.warehouseAddress = WAREHOUSE_ADDRESS;
 
-      order.status = "REFUND_PROCESSING";
-      order.refundAmount = refundAmount;
-      order.refundReason = "Product returned by customer";
-      await order.save();
+      await ret.save();
 
+      // Send approval email with warehouse address
       await sendEmail({
-        to: ret.userId.email,
-        subject: "Return Approved",
+        to: ret.email,
+        subject: "Return Request Approved - Send Package Here",
         html: `
-          <h2>Your return has been approved</h2>
-          <p>Order #${String(ret.orderId._id).slice(-8)}</p>
-          <p><strong>Refund Amount:</strong> ₹${refundAmount.toLocaleString("en-IN")}</p>
-          <p>Please courier the product to our warehouse.</p>
-          <p>Once received, your refund will be processed.</p>
+          <h2>✅ Your return request has been APPROVED</h2>
+          <p>Order #${String(order._id).slice(-8)}</p>
+          
+          <h3>Refund Amount: ₹${refundAmount.toLocaleString("en-IN")}</h3>
+          <p>This includes product cost only.</p>
+          
+          <h3>📮 Send Your Package To:</h3>
+          <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin: 10px 0;">
+            <p><strong>${WAREHOUSE_ADDRESS.name}</strong></p>
+            <p>${WAREHOUSE_ADDRESS.address}</p>
+            <p>${WAREHOUSE_ADDRESS.city} - ${WAREHOUSE_ADDRESS.pincode}</p>
+            <p>Phone: ${WAREHOUSE_ADDRESS.phone}</p>
+          </div>
+          
+          <h3>📋 Please Include:</h3>
+          <ul>
+            <li>Order ID: #${String(order._id).slice(-8)}</li>
+            <li>Your Name: ${ret.name}</li>
+            <li>Your Phone: ${ret.phone}</li>
+          </ul>
+          
+          <p>Once we receive and verify your product, the refund will be processed.</p>
           <br/>
           <b>Sri Vaari Mobiles</b>
         `,
       });
+
+      console.log("✅ Approval email sent to", ret.email);
     }
 
-    // WHEN REJECTED - revert order to completed status
+    // ❌ ADMIN REJECTS
     if (status === "REJECTED") {
-      order.status = "COMPLETED";
-      await order.save();
+      console.log("❌ Return rejected");
+      
+      await ret.save();
 
       await sendEmail({
-        to: ret.userId.email,
+        to: ret.email,
         subject: "Return Request Rejected",
         html: `
-          <h2>Your return request has been rejected</h2>
-          <p>Order #${String(ret.orderId._id).slice(-8)}</p>
-          <p>Your return could not be processed at this time.</p>
+          <h2>❌ Your return request has been REJECTED</h2>
+          <p>Order #${String(order._id).slice(-8)}</p>
+          
+          ${ret.adminNote ? `<p><strong>Reason:</strong> ${ret.adminNote}</p>` : ""}
+          
+          <p>If you have questions, please contact our support team.</p>
           <br/>
           <b>Sri Vaari Mobiles</b>
         `,
       });
+
+      console.log("❌ Rejection email sent to", ret.email);
     }
 
-    res.json(ret);
+    // 📦 PRODUCT RECEIVED
+    if (status === "RECEIVED") {
+      console.log("📦 Product received at warehouse");
+      await ret.save();
+
+      await sendEmail({
+        to: ret.email,
+        subject: "Your Return Package Received",
+        html: `
+          <h2>📦 Your return package has been received</h2>
+          <p>Order #${String(order._id).slice(-8)}</p>
+          <p>We are now verifying the product condition.</p>
+          <p>Refund will be processed soon.</p>
+          <br/>
+          <b>Sri Vaari Mobiles</b>
+        `,
+      });
+
+      console.log("📦 Receipt email sent to", ret.email);
+    }
+
+    // ✅ REFUND PROCESSED - MANUAL refund
+    if (status === "REFUNDED") {
+      console.log("✅ Manual refund processed");
+
+      ret.refundProcessedBy = req.user.userId;
+      ret.refundProcessedAt = new Date();
+      await ret.save();
+
+      // Update order status to REFUNDED
+      order.status = "REFUNDED";
+      order.refundedAt = new Date();
+      await order.save();
+
+      await sendEmail({
+        to: ret.email,
+        subject: "Refund Processed Successfully",
+        html: `
+          <h2>✅ Your refund has been processed</h2>
+          <p>Order #${String(order._id).slice(-8)}</p>
+          
+          <h3 style="color: green;">Refund Amount: ₹${ret.refundAmount.toLocaleString("en-IN")}</h3>
+          
+          <p>The amount has been sent to your original payment method.</p>
+          <p>Please allow 3-5 business days for the amount to appear in your account.</p>
+          <br/>
+          <b>Sri Vaari Mobiles</b>
+        `,
+      });
+
+      console.log("✅ Refund email sent to", ret.email);
+    }
+
+    res.json({ message: "Status updated successfully", ret });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Status update failed" });
+    console.error("❌ Status update error:", err.message);
+    res.status(500).json({ message: `Status update failed: ${err.message}` });
   }
 });
 

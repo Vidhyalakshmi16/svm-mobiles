@@ -27,6 +27,12 @@ const returnRequestSchema = new mongoose.Schema(
       trim: true,
     },
 
+    email: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
     reason: {
       type: String,
       required: true,
@@ -48,16 +54,59 @@ const returnRequestSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: [
-        "REQUESTED",    // customer submitted
-        "APPROVED",     // admin approved
-        "REJECTED",     // admin rejected
-        "IN_TRANSIT",   // customer shipped back
-        "RECEIVED",     // shop received product
-        "REFUNDED",     // money returned
+        "PROCESSING",              // customer submitted - admin reviewing
+        "RETURN_REQUEST_APPROVED", // approved - send package to warehouse
+        "RECEIVED",                // warehouse received product
+        "REJECTED",                // admin rejected
+        "REFUNDED",                // manual refund processed
       ],
-      default: "REQUESTED",
+      default: "PROCESSING",
     },
 
+    // Warehouse/Return address
+    warehouseAddress: {
+      name: String,
+      phone: String,
+      address: String,
+      city: String,
+      pincode: String,
+      default: "",
+    },
+
+    // Refund details
+    refundAmount: {
+      type: Number,
+      default: 0,
+    },
+
+    refundReason: {
+      type: String,
+      default: "",
+    },
+
+    refundProcessedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+
+    refundProcessedAt: {
+      type: Date,
+      default: null,
+    },
+
+    refundApprovedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+
+    refundApprovedAt: {
+      type: Date,
+      default: null,
+    },
+
+    // Admin notes/comments
     adminNote: {
       type: String,
       default: "",
