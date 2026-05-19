@@ -3,35 +3,35 @@ import { getProducts, getCategories } from "../services/api";
 import { FiSearch, FiHeart } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import { useWishlist } from "../context/WishlistContext";
-
+ 
 export default function Products() {
   const navigate = useNavigate();
-
+ 
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
-
+ 
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [priceRange, setPriceRange] = useState("");
   const [sortOption, setSortOption] = useState("");
   const [loading, setLoading] = useState(false);
-
+ 
   // ✅ Mobile detection
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-
+ 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
-
+ 
   const { toggleWishlist, isInWishlist } = useWishlist();
-
+ 
   useEffect(() => {
     fetchProducts();
     fetchCategories();
   }, []);
-
+ 
   const fetchProducts = async () => {
     try {
       setLoading(true);
@@ -41,15 +41,15 @@ export default function Products() {
       setLoading(false);
     }
   };
-
+ 
   const fetchCategories = async () => {
     const data = await getCategories();
     setCategories(data);
   };
-
+ 
   // ---------------- FILTER + SORT ----------------
   let filtered = [...products];
-
+ 
   if (search.trim()) {
     filtered = filtered.filter((p) => {
       const name = p.name?.toLowerCase() || "";
@@ -60,11 +60,11 @@ export default function Products() {
       );
     });
   }
-
+ 
   if (selectedCategory) {
     filtered = filtered.filter((p) => p.category?._id === selectedCategory);
   }
-
+ 
   if (priceRange) {
     filtered = filtered.filter((p) => {
       const price = p.finalPrice ?? p.price;
@@ -73,7 +73,7 @@ export default function Products() {
       return price >= min && price <= max;
     });
   }
-
+ 
   if (sortOption) {
     filtered.sort((a, b) => {
       const pa = a.finalPrice ?? a.price;
@@ -85,12 +85,12 @@ export default function Products() {
       return 0;
     });
   }
-
+ 
   return (
     <div className="container py-4">
       <p className="lux-eyebrow mb-1">Collection</p>
       <h1 className="store-page-title">Browse products</h1>
-
+ 
       {/* ================= MOBILE TOP CONTROLS ================= */}
       {isMobile && (
         <>
@@ -109,7 +109,7 @@ export default function Products() {
                 />
               </div>
             </div>
-
+ 
             <select
               className="form-select form-select-sm"
               style={{ width: "140px" }}
@@ -122,7 +122,7 @@ export default function Products() {
               <option value="newest">Newest</option>
             </select>
           </div>
-
+ 
           {/* 🔹 CATEGORY + PRICE (BELOW) */}
           <div className="d-flex gap-2 mb-3">
             <select
@@ -137,7 +137,7 @@ export default function Products() {
                 </option>
               ))}
             </select>
-
+ 
             <select
               className="form-select form-select-sm"
               value={priceRange}
@@ -153,14 +153,14 @@ export default function Products() {
           </div>
         </>
       )}
-
+ 
       <div className="row">
         {/* ================= DESKTOP FILTER PANEL ================= */}
         {!isMobile && (
           <div className="col-md-3 col-lg-2 mb-4">
             <div className="store-filter-card">
               <div className="store-filter-title">Filters</div>
-
+ 
               <div className="store-filter-section">
                 <div className="store-filter-label">Category</div>
                 <div className="store-filter-pills">
@@ -187,7 +187,7 @@ export default function Products() {
                   ))}
                 </div>
               </div>
-
+ 
               <div className="store-filter-section">
                 <div className="store-filter-label">Price range</div>
                 <div className="store-filter-pills">
@@ -214,7 +214,7 @@ export default function Products() {
             </div>
           </div>
         )}
-
+ 
         {/* ================= PRODUCT GRID ================= */}
         <div className="col-md-9 col-lg-10">
           {!isMobile && (
@@ -232,7 +232,7 @@ export default function Products() {
                   />
                 </div>
               </div>
-
+ 
               <select
                 className="form-select form-select-sm"
                 style={{ width: "180px" }}
@@ -246,7 +246,7 @@ export default function Products() {
               </select>
             </div>
           )}
-
+ 
           {loading ? (
             <p className="store-loading">Loading products…</p>
           ) : (
@@ -287,7 +287,7 @@ export default function Products() {
                         }
                       />
                     </button>
-
+ 
                     <div className="store-product-card__media">
                       <img
                         src={p.images?.[0] || p.image || "/placeholder.png"}
@@ -295,7 +295,7 @@ export default function Products() {
                         className="store-product-card__img"
                       />
                     </div>
-
+ 
                     <div className="store-product-card__body">
                       <div className="store-product-card__brand">{p.brand}</div>
                       <div className="store-product-card__name">{p.name}</div>
@@ -327,7 +327,7 @@ export default function Products() {
           )}
         </div>
       </div>
-
+ 
     </div>
   );
 }

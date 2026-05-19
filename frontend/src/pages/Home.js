@@ -1,298 +1,585 @@
-import { Link } from "react-router-dom";
-import { useEffect, useRef, useState } from "react";
+import React, { Suspense, useRef } from "react";
+import {
+  motion,
+  useScroll,
+  useTransform,
+  useMotionValue,
+  useSpring,
+} from "framer-motion";
+import { Canvas, useFrame } from "@react-three/fiber";
+import { Float, Environment, MeshDistortMaterial } from "@react-three/drei";
 import "./Home.css";
 
-/* ── Animated counter hook ── */
-function useCounter(target, duration = 1800) {
-  const [count, setCount] = useState(0);
-  const ref = useRef(null);
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry.isIntersecting) return;
-        observer.disconnect();
-        let start = null;
-        const step = (ts) => {
-          if (!start) start = ts;
-          const progress = Math.min((ts - start) / duration, 1);
-          setCount(Math.floor(progress * target));
-          if (progress < 1) requestAnimationFrame(step);
-        };
-        requestAnimationFrame(step);
-      },
-      { threshold: 0.5 }
-    );
-    if (ref.current) observer.observe(ref.current);
-    return () => observer.disconnect();
-  }, [target, duration]);
-  return [count, ref];
-}
-
-/* ── Scroll reveal hook ── */
-function useReveal() {
-  const ref = useRef(null);
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add("revealed");
-          observer.unobserve(entry.target);
-        }
-      },
-      { threshold: 0.12 }
-    );
-    const el = ref.current;
-    if (el) observer.observe(el);
-    return () => { if (el) observer.unobserve(el); };
-  }, []);
-  return ref;
-}
-
-/* ── Stat counter component ── */
-function StatCounter({ target, suffix, label }) {
-  const [count, ref] = useCounter(target);
+/* ---------- Subtle ambient 3D background (not the product) ---------- */
+const AmbientShape = ({ position, color, scale = 1 }) => {
+  const ref = useRef();
+  useFrame((state) => {
+    if (ref.current) {
+      ref.current.rotation.x = state.clock.elapsedTime * 0.1;
+      ref.current.rotation.y = state.clock.elapsedTime * 0.15;
+    }
+  });
   return (
-    <div className="stat-item" ref={ref}>
-      <strong>{count}{suffix}</strong>
-      <span>{label}</span>
-    </div>
+    <Float speed={1} rotationIntensity={0.4} floatIntensity={1.5}>
+      <mesh ref={ref} position={position} scale={scale}>
+        <sphereGeometry args={[1, 64, 64]} />
+        <MeshDistortMaterial
+          color={color}
+          distort={0.35}
+          speed={1.5}
+          roughness={0.1}
+          metalness={0.3}
+          opacity={0.55}
+          transparent
+        />
+      </mesh>
+    </Float>
   );
-}
+};
 
-export default function Home() {
-  /* cursor glow */
-  useEffect(() => {
-    const glow = document.getElementById("cursor-glow");
-    const move = (e) => {
-      if (!glow) return;
-      glow.style.left = e.clientX + "px";
-      glow.style.top = e.clientY + "px";
-    };
-    window.addEventListener("mousemove", move);
-    return () => window.removeEventListener("mousemove", move);
-  }, []);
+const AmbientScene = () => (
+  <Canvas camera={{ position: [0, 0, 6], fov: 50 }} dpr={[1, 2]}>
+    <ambientLight intensity={0.6} />
+    <directionalLight position={[5, 5, 5]} intensity={0.8} />
+    <Suspense fallback={null}>
+      <AmbientShape position={[-3.5, 1.5, -2]} color="#c4b5fd" scale={1.2} />
+      <AmbientShape position={[3.5, -1.5, -1]} color="#fbcfe8" scale={1.4} />
+      <AmbientShape position={[2.5, 2, -3]} color="#bae6fd" scale={0.9} />
+      <Environment preset="studio" />
+    </Suspense>
+  </Canvas>
+);
 
-  const offersRef = useReveal();
-  const catRef    = useReveal();
-  const whyRef    = useReveal();
+/* ---------- Phone with mouse-tracking 3D tilt ---------- */
+const TiltPhone = () => {
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const rotateX = useSpring(useTransform(y, [-150, 150], [12, -12]), {
+    stiffness: 150,
+    damping: 20,
+  });
+  const rotateY = useSpring(useTransform(x, [-150, 150], [-12, 12]), {
+    stiffness: 150,
+    damping: 20,
+  });
 
-  const offers = [
-    { icon: "📱", label: "iPhone 17 Launch", desc: "Flat ₹5,000 off on pre-booking", tag: "Pre-book Now", delay: "0s" },
-    { icon: "🎧", label: "Accessories Bonanza", desc: "Buy 2 accessories, Get 1 Free", tag: "Grab Deal", delay: "0.1s" },
-    { icon: "🔄", label: "Exchange Offer", desc: "Save up to ₹10,000 on exchange", tag: "Exchange Now", delay: "0.2s" },
-    { icon: "🛡️", label: "Screen Guard Free", desc: "Free tempered glass with every phone", tag: "Claim Now", delay: "0.3s" },
-  ];
-
-  const categories = [
-    {
-      label: "Mobiles",
-      desc: "Latest smartphones from all top brands",
-      img: "https://suprememobiles.in/cdn/shop/files/1_2ab6c803-16e7-4e9d-8177-09689c589a8a.webp?v=1738819846",
-      to: "/products",
-      cta: "Explore",
-    },
-    {
-      label: "Accessories",
-      desc: "Cases, chargers, earbuds & more",
-      img: "https://m.media-amazon.com/images/I/61HicEZ2vhL.jpg",
-      to: "/products",
-      cta: "Explore",
-    },
-    {
-      label: "Repair Services",
-      desc: "Fast repairs by certified technicians",
-      img: "https://img.lovepik.com/element/40154/9877.png_1200.png",
-      to: "/services",
-      cta: "Book Now",
-    },
-  ];
-
-  const whyUs = [
-    { icon: "🛡️", title: "100% Genuine", desc: "Authentic products from authorised distributors only." },
-    { icon: "⚡", title: "Same-Day Repair", desc: "Most screen & battery fixes done within 24 hours." },
-    { icon: "💬", title: "Expert Advice", desc: "Our team helps you pick the right phone for your budget." },
-    { icon: "🔁", title: "Easy Exchange", desc: "Hassle-free exchange with instant cashback on old phones." },
-  ];
-
-  const tickerItems = [
-    "🔥 iPhone 17 — Flat ₹5,000 off on pre-booking",
-    "🎧 Buy 2 Accessories Get 1 Free",
-    "💰 Exchange old phones & save up to ₹10,000",
-    "⚡ Same-day screen replacement available",
-    "🎁 Free tempered glass with every phone purchase",
-    "📞 Call us: 98765 43210",
-  ];
+  const handleMouse = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    x.set(e.clientX - rect.left - rect.width / 2);
+    y.set(e.clientY - rect.top - rect.height / 2);
+  };
 
   return (
-    <div className="home-page">
-      {/* Cursor glow */}
-      <div id="cursor-glow" aria-hidden="true" />
-
-      {/* ── HERO ── */}
-      <section className="hero">
-        <div className="hero-noise" aria-hidden="true" />
-        <div className="hero-radial" aria-hidden="true" />
-
-        {/* Floating orbs */}
-        <div className="orb orb1" aria-hidden="true" />
-        <div className="orb orb2" aria-hidden="true" />
-        <div className="orb orb3" aria-hidden="true" />
-
-        {/* Grid */}
-        <div className="hero-grid" aria-hidden="true" />
-
-        <div className="hero-inner">
-          <div className="hero-badge">
-            <span className="pulse-ring" />
-            <span className="pulse-dot" />
-            Salem's #1 Mobile Store
+    <motion.div
+      className="tilt-wrapper"
+      onMouseMove={handleMouse}
+      onMouseLeave={() => {
+        x.set(0);
+        y.set(0);
+      }}
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 1, ease: [0.25, 0.1, 0.25, 1] }}
+    >
+      <motion.div
+        className="phone-mockup"
+        style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
+      >
+        <motion.img
+          src="https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=600&q=90&auto=format"
+          alt="Premium smartphone"
+          className="phone-img"
+          animate={{ y: [0, -12, 0] }}
+          transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }}
+        />
+        {/* Floating accent cards */}
+        <motion.div
+          className="float-card card-spec"
+          initial={{ opacity: 0, x: -40 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 1.2, duration: 0.6 }}
+          style={{ transform: "translateZ(60px)" }}
+        >
+          <div className="card-icon">⚡</div>
+          <div>
+            <p className="card-label">Performance</p>
+            <p className="card-value">A17 Pro Chip</p>
           </div>
+        </motion.div>
 
-          <h1 className="hero-heading">
-            <span className="line line1">Sri Vaari</span>
-            <span className="line line2">
-              <span className="gold-stroke">Mobiles</span>
-            </span>
-          </h1>
-
-          <p className="hero-para">
-            Your trusted destination for smartphones,<br className="br-hide" />
-            accessories &amp; lightning-fast repairs.
-          </p>
-
-          <div className="hero-btns">
-            <Link to="/products" className="btn-gold">
-              <span className="btn-shine" />
-              Shop Now
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-            </Link>
-            <Link to="/services" className="btn-outline">
-              Book a Repair
-            </Link>
+        <motion.div
+          className="float-card card-camera"
+          initial={{ opacity: 0, x: 40 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 1.4, duration: 0.6 }}
+          style={{ transform: "translateZ(80px)" }}
+        >
+          <div className="card-icon">📸</div>
+          <div>
+            <p className="card-label">Pro Camera</p>
+            <p className="card-value">48MP Triple</p>
           </div>
+        </motion.div>
 
-          <div className="hero-stats">
-            <StatCounter target={500}  suffix="+"  label="Phones Sold" />
-            <div className="stat-sep" />
-            <StatCounter target={1000} suffix="+"  label="Happy Customers" />
-            <div className="stat-sep" />
-            <StatCounter target={24}   suffix="hr" label="Quick Repair" />
-          </div>
+        <motion.div
+          className="float-card card-rating"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.6, duration: 0.6 }}
+          style={{ transform: "translateZ(50px)" }}
+        >
+          <div className="rating-stars">★★★★★</div>
+          <p className="card-value">4.9 / 5.0</p>
+          <p className="card-label">12,847 reviews</p>
+        </motion.div>
+      </motion.div>
+    </motion.div>
+  );
+};
+
+/* ---------- Data ---------- */
+const featuredPhones = [
+  {
+    name: "iPhone 15 Pro Max",
+    tagline: "Titanium. So strong. So light.",
+    price: "$1,199",
+    img: "https://images.unsplash.com/photo-1696446702183-be9605e25712?w=500&q=85&auto=format",
+  },
+  {
+    name: "Galaxy S24 Ultra",
+    tagline: "Galaxy AI is here.",
+    price: "$1,299",
+    img: "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=500&q=85&auto=format",
+  },
+  {
+    name: "Pixel 8 Pro",
+    tagline: "The best of Google.",
+    price: "$999",
+    img: "https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=500&q=85&auto=format",
+  },
+  {
+    name: "OnePlus 12",
+    tagline: "Never settle.",
+    price: "$799",
+    img: "https://images.unsplash.com/photo-1567581935884-3349723552ca?w=500&q=85&auto=format",
+  },
+];
+
+const brands = ["Apple", "Samsung", "Google", "OnePlus", "Xiaomi", "Nothing", "Sony", "Motorola"];
+
+const features = [
+  { icon: "🚚", title: "Free Delivery", desc: "Complimentary 2-day shipping on every order over $50." },
+  { icon: "🛡️", title: "2-Year Warranty", desc: "Comprehensive protection on every device, parts and labor included." },
+  { icon: "💳", title: "Flexible Financing", desc: "0% APR for 24 months on approved credit. No hidden fees." },
+  { icon: "↩️", title: "30-Day Returns", desc: "Not in love? Return it, no questions asked, full refund guaranteed." },
+];
+
+/* ---------- Animations ---------- */
+const fadeUp = {
+  hidden: { opacity: 0, y: 40 },
+  visible: (i = 0) => ({
+    opacity: 1,
+    y: 0,
+    transition: { delay: i * 0.08, duration: 0.6, ease: [0.25, 0.1, 0.25, 1] },
+  }),
+};
+
+const Home = () => {
+  const containerRef = useRef(null);
+  const { scrollYProgress } = useScroll({ target: containerRef });
+  const heroY = useTransform(scrollYProgress, [0, 0.5], [0, -100]);
+
+  return (
+    <div ref={containerRef} className="home-wrapper">
+
+      {/* ============ HERO ============ */}
+      <section className="hero-section">
+        <div className="hero-bg-3d">
+          <AmbientScene />
         </div>
 
-        {/* Floating trust chips */}
-        <div className="trust-chips">
-          <div className="chip chip1">📦 Free Delivery</div>
-          <div className="chip chip2">🔧 Expert Repair</div>
-          <div className="chip chip3">✅ Genuine Parts</div>
-        </div>
+        <motion.div style={{ y: heroY }} className="hero-content">
+          <motion.span
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.6 }}
+            className="hero-eyebrow"
+          >
+            <span className="pulse-dot"></span> New Flagship Collection 2026
+          </motion.span>
 
-        <div className="scroll-hint">
-          <div className="scroll-line" />
-          <span>Scroll</span>
-        </div>
-      </section>
+          <motion.h1
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5, duration: 0.8 }}
+            className="hero-title"
+          >
+            Premium devices,
+            
 
-      {/* ── TICKER ── */}
-      <div className="ticker">
-        <div className="ticker-inner">
-          {[...tickerItems, ...tickerItems].map((t, i) => (
-            <span key={i} className="tick">{t}<span className="tick-sep">✦</span></span>
-          ))}
-        </div>
-      </div>
+            <span className="accent-text">redefined.</span>
+          </motion.h1>
 
-      {/* ── OFFERS ── */}
-      <section className="sec offers-sec">
-        <div className="sec-label">Limited Time</div>
-        <h2 className="sec-title">Special Offers</h2>
-        <p className="sec-sub">Deals too good to miss — grab them before they're gone.</p>
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.7, duration: 0.6 }}
+            className="hero-sub"
+          >
+            Curated flagship smartphones from the world's leading brands.
+            Authentic, warrantied, and delivered in days — not weeks.
+          </motion.p>
 
-        <div className="offers-grid reveal-grid" ref={offersRef}>
-          {offers.map((o, i) => (
-            <div
-              className="offer-card"
-              key={i}
-              style={{ "--d": o.delay }}
-            >
-              <div className="oc-shine" />
-              <div className="oc-top">
-                <span className="oc-icon">{o.icon}</span>
-                <span className="oc-tag">{o.tag}</span>
-              </div>
-              <h3 className="oc-title">{o.label}</h3>
-              <p className="oc-desc">{o.desc}</p>
-              <div className="oc-bar" />
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── CATEGORIES ── */}
-      <section className="sec cat-sec">
-        <div className="sec-label">Browse</div>
-        <h2 className="sec-title">Shop by Category</h2>
-        <p className="sec-sub">Everything you need, all under one roof.</p>
-
-        <div className="cat-grid reveal-grid" ref={catRef}>
-          {categories.map((c, i) => (
-            <div className="cat-card" key={i} style={{ "--d": `${i * 0.12}s` }}>
-              <div className="cat-img-wrap">
-                <img src={c.img} alt={c.label} loading="lazy" />
-                <div className="cat-img-overlay" />
-              </div>
-              <div className="cat-body">
-                <div>
-                  <h3 className="cat-name">{c.label}</h3>
-                  <p className="cat-desc">{c.desc}</p>
-                </div>
-                <Link to={c.to} className="cat-btn">
-                  {c.cta}
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                </Link>
-              </div>
-              <div className="cat-border-glow" />
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── WHY US ── */}
-      <section className="sec why-sec">
-        <div className="sec-label">Why Us</div>
-        <h2 className="sec-title">The Sri Vaari Promise</h2>
-
-        <div className="why-grid reveal-grid" ref={whyRef}>
-          {whyUs.map((w, i) => (
-            <div className="why-card" key={i} style={{ "--d": `${i * 0.1}s` }}>
-              <div className="why-icon-wrap">
-                <span className="why-icon">{w.icon}</span>
-                <div className="why-icon-ring" />
-              </div>
-              <h4 className="why-title">{w.title}</h4>
-              <p className="why-desc">{w.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── CTA ── */}
-      <section className="cta-sec">
-        <div className="cta-orb" aria-hidden="true" />
-        <div className="cta-inner">
-          <span className="sec-label" style={{ marginBottom: "1rem", display: "inline-block" }}>Ready?</span>
-          <h2 className="cta-heading">Upgrade Your Phone Today</h2>
-          <p className="cta-sub">Visit us in Salem or browse our full collection online.</p>
-          <div className="hero-btns" style={{ marginTop: "2rem" }}>
-            <Link to="/products" className="btn-gold">
-              <span className="btn-shine" />
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.9, duration: 0.6 }}
+            className="hero-actions"
+          >
+            <button className="btn btn-primary">
               Shop Collection
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-            </Link>
-            <Link to="/contact" className="btn-outline">Get Directions</Link>
-          </div>
+              <span className="btn-arrow">→</span>
+            </button>
+            <button className="btn btn-ghost">Compare Models</button>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.1, duration: 0.8 }}
+            className="hero-trust"
+          >
+            <div className="trust-item">
+              <strong>50,000+</strong>
+              <span>Customers worldwide</span>
+            </div>
+            <div className="trust-divider" />
+            <div className="trust-item">
+              <strong>4.9 / 5</strong>
+              <span>Trustpilot rating</span>
+            </div>
+            <div className="trust-divider" />
+            <div className="trust-item">
+              <strong>200+</strong>
+              <span>Models in stock</span>
+            </div>
+          </motion.div>
+        </motion.div>
+
+        <div className="hero-visual">
+          <TiltPhone />
         </div>
       </section>
-    </div>
+
+      {/* ============ BRAND STRIP ============ */}
+<section className="brand-strip">
+<motion.p
+          initial={{ opacity: 0, y: 10 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="strip-label"
+>
+          Trusted by enthusiasts · Authorized by brands
+</motion.p>
+<div className="marquee">
+<motion.div
+            animate={{ x: ["0%", "-50%"] }}
+            transition={{ repeat: Infinity, duration: 30, ease: "linear" }}
+            className="marquee-track"
+>
+            {[...brands, ...brands].map((b, i) => (
+<span key={i} className="brand-item">{b}</span>
+            ))}
+</motion.div>
+</div>
+</section>
+ 
+      {/* ============ FEATURED PRODUCTS ============ */}
+<section className="section section-products">
+<motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.7 }}
+          className="section-header section-header-split"
+>
+<div>
+<span className="section-eyebrow">— Featured Collection</span>
+<h2 className="section-title">
+              This season's <em>most&nbsp;wanted</em>
+</h2>
+</div>
+<div className="section-header-aside">
+<p className="section-sub">
+              Handpicked flagships defining the future of mobile — each device
+              authenticated, warrantied, and ready to ship.
+</p>
+<button className="link-btn">
+              View all devices <span>→</span>
+</button>
+</div>
+</motion.div>
+ 
+        <div className="products-grid">
+          {featuredPhones.map((phone, i) => (
+<motion.article
+              key={phone.name}
+              custom={i}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, amount: 0.2 }}
+              variants={fadeUp}
+              className="product-card"
+>
+<div className="product-image-wrap">
+<span className="product-tag">New</span>
+<motion.img
+                  src={phone.img}
+                  alt={phone.name}
+                  className="product-image"
+                  whileHover={{ scale: 1.08, rotate: -2 }}
+                  transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
+                />
+<motion.button
+                  className="product-wishlist"
+                  aria-label="Add to wishlist"
+                  whileHover={{ scale: 1.15 }}
+                  whileTap={{ scale: 0.9 }}
+>
+                  ♡
+</motion.button>
+<div className="product-overlay">
+<button className="overlay-btn">Quick View</button>
+</div>
+</div>
+<div className="product-info">
+<div className="product-meta">
+<span className="product-rating">★ 4.9</span>
+<span className="product-stock">In stock</span>
+</div>
+<h3 className="product-name">{phone.name}</h3>
+<p className="product-tagline">{phone.tagline}</p>
+<div className="product-footer">
+<div>
+<span className="product-price">{phone.price}</span>
+<span className="product-emi">or $50/mo</span>
+</div>
+<motion.button
+                    className="product-cta"
+                    whileHover={{ x: 4 }}
+                    transition={{ type: "spring", stiffness: 400 }}
+>
+                    View <span>→</span>
+</motion.button>
+</div>
+</div>
+</motion.article>
+          ))}
+</div>
+</section>
+ 
+      {/* ============ SHOWCASE / EDITORIAL BANNER ============ */}
+<section className="showcase-section">
+<motion.div
+          initial={{ opacity: 0, scale: 0.96 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.9, ease: [0.25, 0.1, 0.25, 1] }}
+          className="showcase-inner"
+>
+<div className="showcase-content">
+<span className="section-eyebrow light">— Limited Edition</span>
+<h2 className="showcase-title">
+              Titanium.<br />
+<em>Engineered to last.</em>
+</h2>
+<p className="showcase-sub">
+              The new generation of flagship devices — featuring aerospace-grade
+              materials, AI-powered cameras, and all-day battery life.
+</p>
+<div className="showcase-stats">
+<div>
+<strong>48MP</strong>
+<span>Pro Camera</span>
+</div>
+<div>
+<strong>120Hz</strong>
+<span>ProMotion</span>
+</div>
+<div>
+<strong>1TB</strong>
+<span>Storage</span>
+</div>
+</div>
+<button className="btn btn-light">
+              Discover the collection <span className="btn-arrow">→</span>
+</button>
+</div>
+<motion.div
+            className="showcase-visual"
+            initial={{ opacity: 0, x: 60 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 1, delay: 0.2 }}
+>
+<motion.img
+              src="https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=700&q=90&auto=format"
+              alt="Premium phone"
+              animate={{ y: [0, -18, 0] }}
+              transition={{ repeat: Infinity, duration: 6, ease: "easeInOut" }}
+            />
+<div className="showcase-glow" />
+</motion.div>
+</motion.div>
+</section>
+ 
+      {/* ============ FEATURES ============ */}
+<section className="features-section">
+<motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="section-header"
+>
+<span className="section-eyebrow">— Why MobiVerse</span>
+<h2 className="section-title">
+            Built around <em>your experience</em>
+</h2>
+<p className="section-sub">
+            Every detail — from checkout to unboxing — designed to feel effortless.
+</p>
+</motion.div>
+ 
+        <div className="features-grid">
+          {features.map((f, i) => (
+<motion.div
+              key={f.title}
+              custom={i}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              variants={fadeUp}
+              whileHover={{ y: -8 }}
+              className="feature-card"
+>
+<div className="feature-number">0{i + 1}</div>
+<motion.div
+                className="feature-icon"
+                whileHover={{ rotate: [0, -10, 10, 0], scale: 1.1 }}
+                transition={{ duration: 0.5 }}
+>
+                {f.icon}
+</motion.div>
+<h3 className="feature-title">{f.title}</h3>
+<p className="feature-desc">{f.desc}</p>
+<div className="feature-arrow">→</div>
+</motion.div>
+          ))}
+</div>
+</section>
+ 
+      {/* ============ TESTIMONIALS ============ */}
+<section className="testimonials-section">
+<motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="section-header"
+>
+<span className="section-eyebrow">— Loved by thousands</span>
+<h2 className="section-title">What our customers say</h2>
+</motion.div>
+ 
+        <div className="testimonials-grid">
+          {[
+            {
+              quote: "Fastest delivery I've ever experienced. The phone arrived in pristine condition with thoughtful packaging.",
+              name: "Sarah K.",
+              role: "Verified Buyer",
+              avatar: "https://i.pravatar.cc/100?img=1",
+            },
+            {
+              quote: "Authentic device, perfect price, and incredible support. MobiVerse has earned a lifetime customer.",
+              name: "James M.",
+              role: "Verified Buyer",
+              avatar: "https://i.pravatar.cc/100?img=12",
+            },
+            {
+              quote: "The financing options made it possible to get the flagship I'd been eyeing for months. Highly recommend.",
+              name: "Priya R.",
+              role: "Verified Buyer",
+              avatar: "https://i.pravatar.cc/100?img=5",
+            },
+          ].map((t, i) => (
+<motion.figure
+              key={i}
+              custom={i}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              variants={fadeUp}
+              whileHover={{ y: -6 }}
+              className="testimonial-card"
+>
+<div className="testimonial-stars">★★★★★</div>
+<blockquote>"{t.quote}"</blockquote>
+<figcaption>
+<img src={t.avatar} alt={t.name} />
+<div>
+<strong>{t.name}</strong>
+<span>{t.role}</span>
+</div>
+</figcaption>
+</motion.figure>
+          ))}
+</div>
+</section>
+ 
+      {/* ============ CTA ============ */}
+<section className="cta-section">
+<motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.7 }}
+          className="cta-inner"
+>
+<motion.div
+            className="cta-grain"
+            animate={{ backgroundPosition: ["0% 0%", "100% 100%"] }}
+            transition={{ repeat: Infinity, repeatType: "reverse", duration: 20 }}
+          />
+<span className="section-eyebrow light">— Join the experience</span>
+<h2 className="cta-title">
+            Your next device,<br />
+<em>delivered with care.</em>
+</h2>
+<p className="cta-sub">
+            Join 50,000+ customers who've found their perfect device with MobiVerse.
+</p>
+<div className="cta-actions">
+<motion.button
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.96 }}
+              className="btn btn-light"
+>
+              Browse all devices <span className="btn-arrow">→</span>
+</motion.button>
+<motion.button
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.96 }}
+              className="btn btn-ghost-dark"
+>
+              Talk to an expert
+</motion.button>
+</div>
+</motion.div>
+</section>
+ 
+
+</div>
   );
-}
+};
+ 
+export default Home;

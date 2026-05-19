@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import {
   getProducts,
   getOrdersApi,
@@ -7,16 +8,16 @@ import {
 import {
   FiShoppingBag,
   FiTrendingUp,
-  // FiClock,
   FiTool,
   FiPercent,
   FiUser,
   FiMapPin,
   FiPhone,
   FiSmartphone,
+  FiDollarSign,
+  FiArrowUpRight,
 } from "react-icons/fi";
-
-// Recharts
+ 
 import {
   LineChart,
   Line,
@@ -30,113 +31,107 @@ import {
   Cell,
   Legend,
 } from "recharts";
-
+ 
+import "./AdminDashboardPage.css";
+ 
+const PIE_COLORS = ["#0a0a0a", "#f59e0b", "#10b981", "#ef4444"];
+ 
+const fadeUp = {
+  hidden: { opacity: 0, y: 24 },
+  visible: (i = 0) => ({
+    opacity: 1,
+    y: 0,
+    transition: { delay: i * 0.06, duration: 0.55, ease: [0.25, 0.1, 0.25, 1] },
+  }),
+};
+ 
 export default function AdminDashboardPage() {
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
   const [serviceRequests, setServiceRequests] = useState([]);
   const [loading, setLoading] = useState(false);
-
-useEffect(() => {
-  const fetchAll = async () => {
-    try {
-      setLoading(true);
-      const [p, o, s] = await Promise.all([
-        getProducts(),
-        getOrdersApi(),
-        getServiceRequests(),
-      ]);
-
-      setProducts(Array.isArray(p) ? p : []);
-      setOrders(Array.isArray(o) ? o : []);
-
-      // IMPORTANT FIX
-      const serviceList =
-  s?.requests ||
-  s?.serviceRequests ||
-  s?.data ||
-  (Array.isArray(s) ? s : []);
-
-setServiceRequests(serviceList);
-
-
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  fetchAll();
-}, []);
-
-const liveProducts = products.filter(
-  (p) => (p.stock ?? 0) > 0
-);
-
-
-
+ 
+  useEffect(() => {
+    const fetchAll = async () => {
+      try {
+        setLoading(true);
+        const [p, o, s] = await Promise.all([
+          getProducts(),
+          getOrdersApi(),
+          getServiceRequests(),
+        ]);
+ 
+        setProducts(Array.isArray(p) ? p : []);
+        setOrders(Array.isArray(o) ? o : []);
+ 
+        const serviceList =
+          s?.requests ||
+          s?.serviceRequests ||
+          s?.data ||
+          (Array.isArray(s) ? s : []);
+        setServiceRequests(serviceList);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAll();
+  }, []);
+ 
+  const liveProducts = products.filter((p) => (p.stock ?? 0) > 0);
   const formatINR = (num = 0) =>
     Number(num || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 });
-
-  // ======= Derived metrics =======
+ 
+  // ======= Derived metrics (unchanged) =======
   const successfulOrders = orders.filter(
     (o) => o.status === "Delivered" || o.status === "Completed"
   );
-  
   const pendingOrders = orders.filter(
     (o) => !o.status || o.status === "Placed" || o.status === "In Progress"
   );
   const cancelledOrders = orders.filter((o) => o.status === "Cancelled");
-
+ 
   const totalRevenue = successfulOrders.reduce(
     (sum, o) => sum + (o.total || 0),
     0
   );
+ 
   const actualProfit = successfulOrders.reduce((totalProfit, order) => {
-  let orderProfit = 0;
-
-  order.items?.forEach((item) => {
-    // Find product from products list
-    const product = products.find(
-      (p) =>
-        p._id === item.product ||
-        p._id === item.productId ||
-        p._id === item._id
-    );
-
-    const sellingPrice = item.finalPrice ?? item.price ?? 0;
-    const costPrice = product?.cost ?? 0;
-    const quantity = item.quantity ?? 1;
-
-    orderProfit += (sellingPrice - costPrice) * quantity;
-  });
-
-  return totalProfit + orderProfit;
-}, 0);
-
-
+    let orderProfit = 0;
+    order.items?.forEach((item) => {
+      const product = products.find(
+        (p) =>
+          p._id === item.product ||
+          p._id === item.productId ||
+          p._id === item._id
+      );
+      const sellingPrice = item.finalPrice ?? item.price ?? 0;
+      const costPrice = product?.cost ?? 0;
+      const quantity = item.quantity ?? 1;
+      orderProfit += (sellingPrice - costPrice) * quantity;
+    });
+    return totalProfit + orderProfit;
+  }, 0);
+ 
   const totalOrders = orders.length;
   const totalServiceRequests = serviceRequests.length;
   const newServiceRequests = serviceRequests.filter(
     (r) => r.status === "Placed"
   ).length;
-
-  // Orders by status counts
+ 
   const statusCounts = {
     Placed: orders.filter((o) => !o.status || o.status === "Placed").length,
     "In Progress": orders.filter((o) => o.status === "In Progress").length,
     Delivered: orders.filter((o) => o.status === "Delivered").length,
     Cancelled: orders.filter((o) => o.status === "Cancelled").length,
   };
-
-  // Top discounted products
+ 
   const discountedProducts = [...products]
     .filter((p) => p.discount && p.discount > 0)
     .sort((a, b) => (b.discount || 0) - (a.discount || 0))
     .slice(0, 5);
-
-  // Recent orders (last 5)
+ 
   const recentOrders = [...orders]
     .sort(
       (a, b) =>
@@ -144,8 +139,7 @@ const liveProducts = products.filter(
         new Date(a.createdAt || 0).getTime()
     )
     .slice(0, 5);
-
-  // Recent service requests (last 5)
+ 
   const recentService = [...serviceRequests]
     .sort(
       (a, b) =>
@@ -153,15 +147,13 @@ const liveProducts = products.filter(
         new Date(a.createdAt || 0).getTime()
     )
     .slice(0, 5);
-
+ 
   // ======= Chart data =======
-
-  // Daily revenue & orders (for line chart)
   const dailyMap = {};
   orders.forEach((o) => {
     if (!o.createdAt) return;
     const d = new Date(o.createdAt);
-    const key = d.toISOString().slice(0, 10); // YYYY-MM-DD
+    const key = d.toISOString().slice(0, 10);
     if (!dailyMap[key]) {
       dailyMap[key] = {
         dateLabel: d.toLocaleDateString("en-IN", {
@@ -177,623 +169,435 @@ const liveProducts = products.filter(
       dailyMap[key].revenue += o.total || 0;
     }
   });
-
   const dailyStats = Object.keys(dailyMap)
     .sort()
     .map((k) => dailyMap[k]);
-
-  // Pie chart data
+ 
   const pieData = Object.entries(statusCounts)
     .filter(([, count]) => count > 0)
     .map(([name, value]) => ({ name, value }));
-
-  const PIE_COLORS = ["#0f172a", "#fbbf24", "#22c55e", "#ef4444"];
-
+ 
+  // ======= KPI cards data =======
+  const kpis = [
+    {
+      label: "Total Revenue",
+      value: `₹${formatINR(totalRevenue)}`,
+      meta: "From delivered / completed orders",
+      icon: <FiTrendingUp />,
+      accent: "indigo",
+    },
+    {
+      label: "Total Orders",
+      value: totalOrders,
+      meta: `${pendingOrders.length} active · ${cancelledOrders.length} cancelled`,
+      icon: <FiShoppingBag />,
+      accent: "amber",
+    },
+    {
+      label: "Service Requests",
+      value: totalServiceRequests,
+      meta: `${newServiceRequests} new waiting`,
+      icon: <FiTool />,
+      accent: "rose",
+    },
+    {
+      label: "Products Live",
+      value: liveProducts.length,
+      meta: `${discountedProducts.length} with discounts`,
+      icon: <FiPercent />,
+      accent: "emerald",
+    },
+    {
+      label: "Actual Profit",
+      value: `₹${formatINR(actualProfit)}`,
+      meta: "Selling price minus cost",
+      icon: <FiDollarSign />,
+      accent: "violet",
+    },
+  ];
+ 
   return (
-    <div className="adm-page">
-      <div className="adm-inner">
-        {/* Header */}
-        <div className="d-flex justify-content-between align-items-center mb-4">
-          <div>
-            <h1 className="adm-title mb-1">Admin Overview</h1>
-            <small className="text-muted">
-              High-level snapshot of sales, orders & service activity
-            </small>
-          </div>
-          <div className="adm-header-right d-none d-md-flex">
-            <div className="d-flex align-items-center gap-2 small text-muted">
-              <span className="dot-online" /> Live data
-            </div>
-          </div>
-        </div>
-
-        {loading ? (
-          <p className="text-muted">Loading dashboard...</p>
-        ) : (
-          <>
-            {/* Summary cards */}
-            <div className="adm-summaries mb-4">
-              <div className="adm-card kpi-card">
-                <div>
-                  <div className="card-title">Total Revenue</div>
-                  <div className="card-value">₹{formatINR(totalRevenue)}</div>
-                  <div className="small text-muted mt-1">
-                    From delivered / completed orders
-                  </div>
-                </div>
-                <div className="dash-icon-wrap">
-                  <FiTrendingUp size={22} />
-                </div>
-              </div>
-
-              <div className="adm-card kpi-card">
-                <div>
-                  <div className="card-title">Total Orders</div>
-                  <div className="card-value">{totalOrders}</div>
-                  <div className="small text-muted mt-1">
-                    {pendingOrders.length} active • {cancelledOrders.length}{" "}
-                    cancelled
-                  </div>
-                </div>
-                <div className="dash-icon-wrap">
-                  <FiShoppingBag size={22} />
-                </div>
-              </div>
-
-              <div className="adm-card kpi-card">
-                <div>
-                  <div className="card-title">Service Requests</div>
-                  <div className="card-value">{totalServiceRequests}</div>
-                  <div className="small text-muted mt-1">
-                    {newServiceRequests} new waiting
-                  </div>
-                </div>
-                <div className="dash-icon-wrap">
-                  <FiTool size={22} />
-                </div>
-              </div>
-
-              <div className="adm-card kpi-card">
-                <div>
-                  <div className="card-title">Products Live</div>
-                  <div className="card-value">{liveProducts.length}</div>
-                  <div className="small text-muted mt-1">
-                    {discountedProducts.length} with discounts
-                  </div>
-                </div>
-                <div className="dash-icon-wrap">
-                  <FiPercent size={22} />
-                </div>
-              </div>
-
-              <div className="adm-card d-flex justify-content-between align-items-center kpi-card">
-                <div>
-                  <div className="card-title">Actual Profit</div>
-                  <div className="card-value">
-                    ₹{formatINR(actualProfit)}
-                  </div>
-                  <div className="small text-muted mt-1">
-                    Calculated from product cost vs selling price
-                  </div>
-                </div>
-                <div className="dash-icon-wrap">
-                  <FiTrendingUp size={22} />
-                </div>
-              </div>
-
-            </div>
-
-            {/* Charts row – SQUARE CARDS */}
-<div className="charts-row charts-row-square mb-4">
-  {/* Line Chart: Revenue & Orders */}
-  <div className="chart-card chart-square">
-    <div className="chart-header">
-      <h3 className="mb-1">Revenue &amp; Orders</h3>
-      <small className="text-muted">
-        Trend of revenue vs number of orders
-      </small>
-    </div>
-
-    {dailyStats.length === 0 ? (
-      <p className="small text-muted mb-0 mt-3">
-        Not enough data to show trend yet.
-      </p>
-    ) : (
-      <div className="chart-wrapper">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart
-            data={dailyStats}
-            margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="dateLabel" />
-            <YAxis
-              yAxisId="left"
-              tickFormatter={(v) => `₹${formatINR(v)}`}
-            />
-            <YAxis
-              yAxisId="right"
-              orientation="right"
-              tickFormatter={(v) => `${v}`}
-            />
-            <Tooltip
-              contentStyle={{
-                borderRadius: 12,
-                border: "1px solid #e5e7eb",
-              }}
-              formatter={(value, name) =>
-                name === "Revenue"
-                  ? `₹${formatINR(value)}`
-                  : `${value} orders`
-              }
-            />
-            <Legend />
-            <Line
-              yAxisId="left"
-              type="monotone"
-              dataKey="revenue"
-              name="Revenue"
-              stroke="#111827"
-              strokeWidth={2.4}
-              dot={{ r: 4 }}
-              activeDot={{ r: 6 }}
-            />
-            <Line
-              yAxisId="right"
-              type="monotone"
-              dataKey="ordersCount"
-              name="Orders"
-              stroke="#f59e0b"
-              strokeWidth={2.4}
-              dot={{ r: 4 }}
-              activeDot={{ r: 6 }}
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
-    )}
-  </div>
-
-  {/* Pie Chart: Order status */}
-  <div className="chart-card chart-square">
-    <div className="chart-header">
-      <h3 className="mb-1">Order Status Breakdown</h3>
-      <small className="text-muted">
-        Delivered vs pending vs cancelled
-      </small>
-    </div>
-
-    {pieData.length === 0 ? (
-      <p className="small text-muted mb-0 mt-3">
-        No orders to display status chart.
-      </p>
-    ) : (
-      <div className="chart-wrapper d-flex align-items-center gap-3">
-        <ResponsiveContainer width="55%" height="100%">
-          <PieChart>
-            <Pie
-              data={pieData}
-              dataKey="value"
-              nameKey="name"
-              innerRadius="60%"
-              outerRadius="88%"
-              stroke="#ffffff"
-              strokeWidth={2}
-            >
-              {pieData.map((entry, index) => (
-                <Cell
-                  key={entry.name}
-                  fill={PIE_COLORS[index % PIE_COLORS.length]}
-                />
-              ))}
-            </Pie>
-            <Tooltip
-              contentStyle={{
-                borderRadius: 12,
-                border: "1px solid #e5e7eb",
-              }}
-            />
-          </PieChart>
-        </ResponsiveContainer>
-        <div className="flex-grow-1">
-          {pieData.map((item, idx) => (
-            <div
-              key={item.name}
-              className="d-flex justify-content-between align-items-center mb-2 small"
-            >
-              <div className="d-flex align-items-center gap-2">
-                <span
-                  className="legend-dot"
-                  style={{
-                    background: PIE_COLORS[idx % PIE_COLORS.length],
-                  }}
-                />
-                <span>{item.name}</span>
-              </div>
-              <span className="text-muted">
-                {item.value} orders
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-    )}
-  </div>
-
-  {/* Top Discounts – scrollable */}
-  <div className="chart-card chart-square chart-discount">
-    <h3 className="mb-1">Top Discounts</h3>
-    <div className="small text-muted mb-1">
-      Products with highest current discount
-    </div>
-
-    <div className="discount-list">
-      {discountedProducts.length === 0 ? (
-        <p className="small text-muted mb-0">
-          No discounts applied yet.
-        </p>
-      ) : (
-        <ul className="list-unstyled mb-0">
-          {discountedProducts.map((p) => (
-            <li
-              key={p._id}
-              className="d-flex justify-content-between align-items-center mb-2"
-            >
-              <div className="d-flex flex-column">
-                <span className="small fw-semibold">
-                  {p.name}
-                </span>
-                <span className="small text-muted">
-                  {p.brand} • ₹
-                  {formatINR(p.finalPrice ?? p.price)}
-                </span>
-              </div>
-              <span className="badge rounded-pill discount-pill">
-                {p.discount}% OFF
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  </div>
+<div className="adm-wrapper">
+      {/* ============ HEADER ============ */}
+<motion.header
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
+        className="adm-header"
+>
+<div>
+<span className="adm-eyebrow">— Admin</span>
+<h1 className="adm-title">
+            Business <em>overview</em>
+</h1>
+<p className="adm-sub">
+            A snapshot of sales, orders and service activity across MobiVerse.
+</p>
 </div>
-
-
-            {/* Bottom row: Recent orders + Service */}
-            <div className="charts-row">
-              {/* Recent Orders */}
-              <div className="chart-card">
-                <h3 className="mb-2">Recent Orders</h3>
-                {recentOrders.length === 0 ? (
-                  <p className="small text-muted mb-0">No orders yet.</p>
-                ) : (
-                  <div
-                    style={{ maxHeight: 260, overflowY: "auto" }}
-                    className="pe-1"
-                  >
-                    {recentOrders.map((o) => (
-                      <div
-                        key={o._id}
-                        className="d-flex justify-content-between align-items-start mb-2 pb-2 border-bottom"
-                        style={{ borderColor: "#eef2f7" }}
-                      >
-                        <div>
-                          <div className="small fw-semibold">
-                            #{String(o._id).slice(-8)}
-                          </div>
-                          <div className="small text-muted">
-                            {o.customer?.name}
-                          </div>
-                          <div className="tiny-muted">
-                            {o.createdAt &&
-                              new Date(o.createdAt).toLocaleString("en-IN", {
-                                dateStyle: "medium",
-                                timeStyle: "short",
-                              })}
-                          </div>
-                        </div>
-                        <div className="text-end">
-                          <div className="small fw-semibold text-success">
-                            ₹{formatINR(o.total)}
-                          </div>
-                          <span
-                            className={`tiny-pill tiny-${(
-                              o.status || "Placed"
-                            )
-                              .toLowerCase()
-                              .replace(" ", "-")}`}
-                          >
-                            {o.status || "Placed"}
-                          </span>
-                        </div>
-                      </div>
+<div className="adm-live-pill">
+<span className="live-dot" /> Live data
+</div>
+</motion.header>
+ 
+      {loading ? (
+<div className="adm-skeleton-grid">
+          {[...Array(5)].map((_, i) => (
+<div key={i} className="adm-skeleton-card" />
+          ))}
+</div>
+      ) : (
+<>
+          {/* ============ KPI CARDS ============ */}
+<section className="adm-kpis">
+            {kpis.map((k, i) => (
+<motion.div
+                key={k.label}
+                custom={i}
+                initial="hidden"
+                animate="visible"
+                variants={fadeUp}
+                whileHover={{ y: -4 }}
+                className={`adm-kpi adm-kpi--${k.accent}`}
+>
+<div className="adm-kpi-head">
+<span className="adm-kpi-label">{k.label}</span>
+<span className="adm-kpi-icon">{k.icon}</span>
+</div>
+<div className="adm-kpi-value">{k.value}</div>
+<div className="adm-kpi-meta">{k.meta}</div>
+</motion.div>
+            ))}
+</section>
+ 
+          {/* ============ CHARTS ROW ============ */}
+<section className="adm-charts">
+            {/* Line Chart */}
+<motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              variants={fadeUp}
+              className="adm-panel adm-panel--wide"
+>
+<div className="adm-panel-head">
+<div>
+<span className="adm-eyebrow small">— Performance</span>
+<h3>Revenue & orders</h3>
+</div>
+<span className="adm-panel-meta">Trend over time</span>
+</div>
+ 
+              {dailyStats.length === 0 ? (
+<div className="adm-empty-mini">Not enough data yet.</div>
+              ) : (
+<div className="adm-chart-area">
+<ResponsiveContainer width="100%" height="100%">
+<LineChart
+                      data={dailyStats}
+                      margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+>
+<defs>
+<linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0%" stopColor="#0a0a0a" stopOpacity={0.2} />
+<stop offset="100%" stopColor="#0a0a0a" stopOpacity={0} />
+</linearGradient>
+</defs>
+<CartesianGrid
+                        strokeDasharray="3 3"
+                        stroke="#e7e5e4"
+                        vertical={false}
+                      />
+<XAxis
+                        dataKey="dateLabel"
+                        stroke="#737373"
+                        fontSize={11}
+                        tickLine={false}
+                        axisLine={false}
+                      />
+<YAxis
+                        yAxisId="left"
+                        stroke="#737373"
+                        fontSize={11}
+                        tickLine={false}
+                        axisLine={false}
+                        tickFormatter={(v) => `₹${formatINR(v)}`}
+                      />
+<YAxis
+                        yAxisId="right"
+                        orientation="right"
+                        stroke="#737373"
+                        fontSize={11}
+                        tickLine={false}
+                        axisLine={false}
+                      />
+<Tooltip
+                        contentStyle={{
+                          borderRadius: 12,
+                          border: "1px solid #e7e5e4",
+                          background: "#ffffff",
+                          boxShadow: "0 10px 30px rgba(0,0,0,0.06)",
+                          fontSize: 12,
+                        }}
+                        formatter={(value, name) =>
+                          name === "Revenue"
+                            ? `₹${formatINR(value)}`
+                            : `${value} orders`
+                        }
+                      />
+<Legend
+                        iconType="circle"
+                        wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
+                      />
+<Line
+                        yAxisId="left"
+                        type="monotone"
+                        dataKey="revenue"
+                        name="Revenue"
+                        stroke="#0a0a0a"
+                        strokeWidth={2.2}
+                        dot={false}
+                        activeDot={{ r: 5, fill: "#0a0a0a" }}
+                      />
+<Line
+                        yAxisId="right"
+                        type="monotone"
+                        dataKey="ordersCount"
+                        name="Orders"
+                        stroke="#4f46e5"
+                        strokeWidth={2.2}
+                        dot={false}
+                        activeDot={{ r: 5, fill: "#4f46e5" }}
+                      />
+</LineChart>
+</ResponsiveContainer>
+</div>
+              )}
+</motion.div>
+ 
+            {/* Pie Chart */}
+<motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              variants={fadeUp}
+              className="adm-panel"
+>
+<div className="adm-panel-head">
+<div>
+<span className="adm-eyebrow small">— Status</span>
+<h3>Order breakdown</h3>
+</div>
+</div>
+ 
+              {pieData.length === 0 ? (
+<div className="adm-empty-mini">No orders yet.</div>
+              ) : (
+<div className="adm-pie-wrap">
+<div className="adm-pie-chart">
+<ResponsiveContainer width="100%" height="100%">
+<PieChart>
+<Pie
+                          data={pieData}
+                          dataKey="value"
+                          nameKey="name"
+                          innerRadius="62%"
+                          outerRadius="92%"
+                          stroke="#ffffff"
+                          strokeWidth={3}
+>
+                          {pieData.map((entry, index) => (
+<Cell
+                              key={entry.name}
+                              fill={PIE_COLORS[index % PIE_COLORS.length]}
+                            />
+                          ))}
+</Pie>
+<Tooltip
+                          contentStyle={{
+                            borderRadius: 12,
+                            border: "1px solid #e7e5e4",
+                            background: "#ffffff",
+                            fontSize: 12,
+                          }}
+                        />
+</PieChart>
+</ResponsiveContainer>
+<div className="adm-pie-center">
+<span>{totalOrders}</span>
+<small>Total</small>
+</div>
+</div>
+<div className="adm-pie-legend">
+                    {pieData.map((item, idx) => (
+<div key={item.name} className="adm-legend-row">
+<span className="adm-legend-left">
+<span
+                            className="adm-legend-dot"
+                            style={{
+                              background: PIE_COLORS[idx % PIE_COLORS.length],
+                            }}
+                          />
+                          {item.name}
+</span>
+<strong>{item.value}</strong>
+</div>
                     ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Recent Service Requests */}
-              <div className="chart-card">
-                <h3 className="mb-2">Recent Service Requests</h3>
-                {recentService.length === 0 ? (
-                  <p className="small text-muted mb-0">
-                    No service requests yet.
-                  </p>
-                ) : (
-                  <div
-                    style={{ maxHeight: 260, overflowY: "auto" }}
-                    className="pe-1"
-                  >
-                    {recentService.map((r) => (
-                      <div
-                        key={r._id}
-                        className="d-flex justify-content-between align-items-start mb-2 pb-2 border-bottom"
-                        style={{ borderColor: "#eef2f7" }}
-                      >
-                        <div>
-                          <div className="small fw-semibold d-flex align-items-center gap-1">
-                            <FiUser size={12} />
-                            <span>{r.name}</span>
-                          </div>
-                          <div className="tiny-muted d-flex align-items-center gap-1">
-                            <FiPhone size={11} /> <span>{r.phone}</span>
-                          </div>
-                          {r.deviceBrand && (
-                            <div className="tiny-muted d-flex align-items-center gap-1">
-                              <FiSmartphone size={11} />{" "}
-                              <span>
-                                {r.deviceBrand}
-                                {r.deviceModel ? ` • ${r.deviceModel}` : ""}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                        <div className="text-end">
-                          <div className="tiny-muted d-flex align-items-center gap-1 justify-content-end">
-                            <FiMapPin size={11} />
-                            <span>
-                              {r.city || ""}
-                              {r.pincode ? ` • ${r.pincode}` : ""}
-                            </span>
-                          </div>
-                          <span className="tiny-pill tiny-service">
-                            {r.status || "New"}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* Local styles specific for dashboard */}
-      <style>{`
-        .adm-page {
-          background:#f3f4f6;
-          min-height:100vh;
-          padding:24px;
-        }
-        .adm-inner {
-          max-width:1200px;
-          margin:0 auto;
-        }
-        .adm-title {
-          font-size:24px;
-          font-weight:700;
-          color:#111827;
-        }
-
-        .adm-summaries {
-          display:grid;
-          grid-template-columns: repeat(5, minmax(0, 1fr));
-          gap:18px;
-        }
-
-        .adm-card {
-          background:#ffffff;
-          border-radius:18px;
-          padding:16px 18px;
-          box-shadow:0 10px 30px rgba(15,23,42,0.08);
-          display:flex;
-          justify-content:space-between;
-          align-items:flex-start;
-        }
-        .kpi-card {
-          position:relative;
-          overflow:hidden;
-        }
-        .kpi-card::before {
-          content:"";
-          position:absolute;
-          inset:0;
-          background:radial-gradient(circle at top right, rgba(17,24,39,0.06), transparent 55%);
-          pointer-events:none;
-        }
-
-        .card-title {
-          font-size:13px;
-          text-transform:uppercase;
-          letter-spacing:0.08em;
-          color:#6b7280;
-          margin-bottom:4px;
-        }
-        .card-value {
-          font-size:22px;
-          font-weight:700;
-          color:#111827;
-        }
-
-        .dash-icon-wrap {
-          width:40px;
-          height:40px;
-          border-radius:999px;
-          display:flex;
-          align-items:center;
-          justify-content:center;
-          background: #111827;
-          color:#f9fafb;
-          box-shadow: 0 6px 18px rgba(15,23,42,0.25);
-          flex-shrink:0;
-        }
-
-        .charts-row {
-          display:grid;
-          grid-template-columns:2fr 1.6fr 1.4fr;
-          gap:18px;
-        }
-
-        /* NEW: square layout for the top 3 cards */
-.charts-row-square {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-/* make each chart card look like a square */
-.chart-square {
-  aspect-ratio: 1 / 1;
-  display: flex;
-  flex-direction: column;
-}
-
-/* chart area fills remaining space nicely */
-.chart-square .chart-wrapper {
-  flex: 1;
-  min-height: 0;
-}
-
-/* Top discounts scroll area */
-.chart-discount .discount-list {
-  flex: 1;
-  min-height: 0;
-  margin-top: 8px;
-  overflow-y: auto;
-  padding-right: 4px;
-}
-
-/* optional: softer scrollbar look */
-.chart-discount .discount-list::-webkit-scrollbar {
-  width: 6px;
-}
-.chart-discount .discount-list::-webkit-scrollbar-track {
-  background: #f3f4f6;
-  border-radius: 999px;
-}
-.chart-discount .discount-list::-webkit-scrollbar-thumb {
-  background: #9ca3af;
-  border-radius: 999px;
-}
-
-/* keep responsiveness */
-@media (max-width: 1200px) {
-  .charts-row-square {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-@media (max-width: 992px) {
-  .charts-row,
-  .charts-row-square {
-    grid-template-columns: 1fr !important;
-  }
-}
-
-        .chart-card {
-          background:#ffffff;
-          border-radius:18px;
-          padding:16px 18px;
-          box-shadow:0 10px 30px rgba(15,23,42,0.06);
-        }
-        .chart-header h3 {
-          font-size:16px;
-          font-weight:600;
-          color:#111827;
-        }
-        .chart-wrapper {
-          margin-top:10px;
-        }
-
-        .discount-pill {
-          background:#111827;
-          color:#f9fafb;
-          font-size:11px;
-          padding-inline:10px;
-          box-shadow:0 4px 12px rgba(15,23,42,0.25);
-        }
-
-        .tiny-pill {
-          display:inline-flex;
-          align-items:center;
-          justify-content:center;
-          padding:2px 8px;
-          border-radius:999px;
-          font-size:10px;
-          font-weight:600;
-        }
-        .tiny-placed {
-          background:#e0f2fe;
-          color:#075985;
-        }
-        .tiny-in-progress {
-          background:#fef3c7;
-          color:#92400e;
-        }
-        .tiny-delivered,
-        .tiny-completed {
-          background:#dcfce7;
-          color:#166534;
-        }
-        .tiny-cancelled {
-          background:#fee2e2;
-          color:#b91c1c;
-        }
-        .tiny-service {
-          background:#e5e7eb;
-          color:#111827;
-        }
-
-        .tiny-muted {
-          font-size:11px;
-          color:#6b7280;
-        }
-
-        .dot-online {
-          width:8px;
-          height:8px;
-          border-radius:999px;
-          background:#22c55e;
-          box-shadow:0 0 0 6px rgba(34,197,94,.25);
-        }
-        .legend-dot {
-          width:10px;
-          height:10px;
-          border-radius:999px;
-        }
-
-        @media (max-width: 1200px) {
-          .charts-row {
-            grid-template-columns:1.5fr 1.5fr;
-          }
-        }
-        @media (max-width: 992px) {
-          .adm-summaries {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-          }
-          .charts-row {
-            grid-template-columns:1fr;
-          }
-        }
-        @media (max-width: 600px) {
-          .adm-page {
-            padding:16px;
-          }
-          .adm-summaries {
-            grid-template-columns:1fr;
-          }
-        }
-      `}</style>
-    </div>
+</div>
+</div>
+              )}
+</motion.div>
+ 
+            {/* Top Discounts */}
+<motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              variants={fadeUp}
+              className="adm-panel"
+>
+<div className="adm-panel-head">
+<div>
+<span className="adm-eyebrow small">— Promotions</span>
+<h3>Top discounts</h3>
+</div>
+</div>
+ 
+              {discountedProducts.length === 0 ? (
+<div className="adm-empty-mini">No discounts applied.</div>
+              ) : (
+<ul className="adm-discount-list">
+                  {discountedProducts.map((p) => (
+<li key={p._id} className="adm-discount-item">
+<div className="adm-discount-info">
+<span className="adm-discount-name">{p.name}</span>
+<span className="adm-discount-meta">
+                          {p.brand} · ₹{formatINR(p.finalPrice ?? p.price)}
+</span>
+</div>
+<span className="adm-discount-tag">{p.discount}% OFF</span>
+</li>
+                  ))}
+</ul>
+              )}
+</motion.div>
+</section>
+ 
+          {/* ============ TABLES ROW ============ */}
+<section className="adm-tables">
+            {/* Recent Orders */}
+<motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              variants={fadeUp}
+              className="adm-panel"
+>
+<div className="adm-panel-head">
+<div>
+<span className="adm-eyebrow small">— Latest activity</span>
+<h3>Recent orders</h3>
+</div>
+<a href="/admin/orders" className="adm-link">
+                  View all <FiArrowUpRight />
+</a>
+</div>
+ 
+              {recentOrders.length === 0 ? (
+<div className="adm-empty-mini">No orders yet.</div>
+              ) : (
+<div className="adm-list">
+                  {recentOrders.map((o) => (
+<div key={o._id} className="adm-list-row">
+<div className="adm-list-left">
+<span className="adm-list-id">
+                          #{String(o._id).slice(-8)}
+</span>
+<span className="adm-list-name">
+                          {o.customer?.name || "—"}
+</span>
+<span className="adm-list-meta">
+                          {o.createdAt &&
+                            new Date(o.createdAt).toLocaleString("en-IN", {
+                              dateStyle: "medium",
+                              timeStyle: "short",
+                            })}
+</span>
+</div>
+<div className="adm-list-right">
+<span className="adm-list-amount">
+                          ₹{formatINR(o.total)}
+</span>
+<span
+                          className={`adm-status adm-status--${(
+                            o.status || "Placed"
+                          )
+                            .toLowerCase()
+                            .replace(" ", "-")}`}
+>
+                          {o.status || "Placed"}
+</span>
+</div>
+</div>
+                  ))}
+</div>
+              )}
+</motion.div>
+ 
+            {/* Recent Service Requests */}
+<motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              variants={fadeUp}
+              className="adm-panel"
+>
+<div className="adm-panel-head">
+<div>
+<span className="adm-eyebrow small">— Service</span>
+<h3>Recent service requests</h3>
+</div>
+<a href="/admin/service-requests" className="adm-link">
+                  View all <FiArrowUpRight />
+</a>
+</div>
+ 
+              {recentService.length === 0 ? (
+<div className="adm-empty-mini">No service requests yet.</div>
+              ) : (
+<div className="adm-list">
+                  {recentService.map((r) => (
+<div key={r._id} className="adm-list-row">
+<div className="adm-list-left">
+<span className="adm-list-name">
+<FiUser size={12} /> {r.name}
+</span>
+<span className="adm-list-meta">
+<FiPhone size={11} /> {r.phone}
+</span>
+                        {r.deviceBrand && (
+<span className="adm-list-meta">
+<FiSmartphone size={11} /> {r.deviceBrand}
+                            {r.deviceModel ? ` · ${r.deviceModel}` : ""}
+</span>
+                        )}
+</div>
+<div className="adm-list-right">
+<span className="adm-list-meta">
+<FiMapPin size={11} /> {r.city || ""}
+                          {r.pincode ? ` · ${r.pincode}` : ""}
+</span>
+<span className="adm-status adm-status--service">
+                          {r.status || "New"}
+</span>
+</div>
+</div>
+                  ))}
+</div>
+              )}
+</motion.div>
+</section>
+</>
+      )}
+</div>
   );
 }

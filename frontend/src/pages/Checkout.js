@@ -4,10 +4,10 @@ import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { createOrderApi } from "../services/api";
 import { useAuth } from "../context/AuthContext";
-import {
-  createPaymentOrderApi,
-  verifyPaymentApi,
-} from "../services/api";
+import { createPaymentOrderApi, verifyPaymentApi } from "../services/api";
+import { motion, AnimatePresence } from "framer-motion";
+import { FiUser, FiPhone, FiMapPin, FiZap, FiShoppingBag } from "react-icons/fi";
+import "./Checkout.css";
 
 export default function Checkout() {
   const navigate = useNavigate();
@@ -171,207 +171,266 @@ export default function Checkout() {
 
   if (isEmpty) {
     return (
-      <div className="container py-4">
-        <div className="lux-empty-card text-center">
-          <p className="lux-eyebrow">Checkout</p>
-          <h1 className="lux-heading-lg mb-2">Your bag is empty</h1>
-          <p className="text-muted mb-4 small">
-            Add products before completing checkout.
-          </p>
-          <Link to="/products" className="store-btn-primary px-5">
-            Browse collection
-          </Link>
+      <motion.div className="mv-checkout-wrapper mv-checkout-empty" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+        <div className="mv-checkout-container">
+          <div className="mv-empty-state">
+            <motion.div className="mv-empty-icon" initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.6, delay: 0.1 }}>
+              <FiShoppingBag />
+            </motion.div>
+            <h1 className="mv-empty-title">
+              Your bag is <em>empty</em>
+            </h1>
+            <p className="mv-empty-text">Add products before completing checkout.</p>
+            <Link to="/products" className="mv-btn-primary mv-empty-cta">
+              Browse Collection
+            </Link>
+          </div>
         </div>
-      </div>
+      </motion.div>
     );
   }
 
   return (
-    <div className="container py-4">
-      <p className="lux-eyebrow mb-1">Secure checkout</p>
-      <h1 className="store-page-title mb-4">Delivery &amp; payment</h1>
-
-      <div className="row g-4">
-        <div className="col-lg-8">
-          <div className="lux-cart-card lux-form">
-            <h2 className="lux-heading-lg fs-4 mb-3">Delivery details</h2>
-
-            <form onSubmit={handlePlaceOrder}>
-              <div className="mb-3">
-                <label className="form-label">Full name *</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  name="name"
-                  value={form.name}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-
-              <div className="mb-3">
-                <label className="form-label">Mobile number *</label>
-                <input
-                  type="tel"
-                  className="form-control"
-                  name="phone"
-                  value={form.phone}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-
-              <div className="mb-3">
-                <label className="form-label">Address *</label>
-                <textarea
-                  className="form-control"
-                  rows="3"
-                  name="address"
-                  value={form.address}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-
-              <div className="row">
-                <div className="col-md-6 mb-3">
-                  <label className="form-label">City *</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    name="city"
-                    value={form.city}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                <div className="col-md-6 mb-3">
-                  <label className="form-label">Pincode *</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    name="pincode"
-                    value={form.pincode}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="mb-3">
-                <label className="form-label">Payment</label>
-                <div className="alert lux-alert-pay small mb-0">
-                  UPI — Google Pay, PhonePe, Paytm
-                </div>
-                <div className="small text-muted mt-2">
-                  Secure payment powered by Razorpay.
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                className="store-btn-primary w-100 mt-1"
-                disabled={placing}
-              >
-                {placing ? "Processing…" : "Place order"}
-              </button>
-            </form>
-          </div>
+    <motion.div className="mv-checkout-wrapper" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
+      <div className="mv-checkout-container">
+        <div className="mv-checkout-header">
+          <motion.h1 className="mv-checkout-title" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+            Delivery &amp; <em>Payment</em>
+          </motion.h1>
+          <motion.p className="mv-checkout-subtitle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6, delay: 0.1 }}>
+            Complete your order securely
+          </motion.p>
         </div>
 
-        <div className="col-lg-4">
-          <div className="lux-summary-card">
-            <h6 className="lux-summary-title">Order summary</h6>
+        <div className="mv-checkout-grid">
+          {/* Left: Checkout Form */}
+          <motion.div className="mv-checkout-form-section" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.2 }}>
+            <div className="mv-checkout-form-card">
+              <h2 className="mv-form-section-title">Delivery Details</h2>
 
-            <div
-              className="mb-3 rounded-3 p-2"
-              style={{
-                maxHeight: 220,
-                overflowY: "auto",
-                background: "rgba(201,162,39,0.06)",
-                border: "1px solid var(--lux-border)",
-              }}
-            >
-              {cartItems.map((item) => {
-                const unitPrice = item.finalPrice ?? item.price ?? 0;
-                const qty = item.quantity || 1;
-                const lineTotal = unitPrice * qty;
+              <form className="mv-checkout-form" onSubmit={handlePlaceOrder}>
+                {/* Name Field */}
+                <motion.div className="mv-form-group" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.3 }}>
+                  <label htmlFor="name" className="mv-form-label">
+                    Full Name <span className="mv-required">*</span>
+                  </label>
+                  <div className="mv-form-input-wrapper">
+                    <FiUser className="mv-form-icon" />
+                    <input
+                      id="name"
+                      type="text"
+                      className="mv-form-input"
+                      name="name"
+                      placeholder="John Doe"
+                      value={form.name}
+                      onChange={handleChange}
+                      required
+                    />
+                  </div>
+                </motion.div>
 
-                return (
-                  <div
-                    key={item._id}
-                    className="d-flex justify-content-between align-items-center py-2 border-bottom border-opacity-10"
-                    style={{ borderColor: "var(--lux-border)" }}
-                  >
-                    <div className="d-flex align-items-center gap-2">
-                      {(item.image || item.images?.[0]) && (
-                        <img
-                          src={item.image || item.images?.[0]}
-                          alt={item.name}
-                          style={{
-                            width: 44,
-                            height: 44,
-                            objectFit: "cover",
-                            borderRadius: 8,
-                            border: "1px solid var(--lux-border)",
-                          }}
-                        />
-                      )}
-                      <div>
-                        <div className="small fw-semibold">{item.name}</div>
-                        <div className="small text-muted">Qty: {qty}</div>
-                      </div>
-                    </div>
-                    <div className="small fw-bold">
-                      ₹{lineTotal.toLocaleString("en-IN")}
+                {/* Phone Field */}
+                <motion.div className="mv-form-group" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.35 }}>
+                  <label htmlFor="phone" className="mv-form-label">
+                    Mobile Number <span className="mv-required">*</span>
+                  </label>
+                  <div className="mv-form-input-wrapper">
+                    <FiPhone className="mv-form-icon" />
+                    <input
+                      id="phone"
+                      type="tel"
+                      className="mv-form-input"
+                      name="phone"
+                      placeholder="+91 98765 43210"
+                      value={form.phone}
+                      onChange={handleChange}
+                      required
+                    />
+                  </div>
+                </motion.div>
+
+                {/* Address Field */}
+                <motion.div className="mv-form-group" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.4 }}>
+                  <label htmlFor="address" className="mv-form-label">
+                    Address <span className="mv-required">*</span>
+                  </label>
+                  <textarea
+                    id="address"
+                    className="mv-form-textarea"
+                    name="address"
+                    placeholder="Street address, building, floor, etc."
+                    rows="3"
+                    value={form.address}
+                    onChange={handleChange}
+                    required
+                  />
+                </motion.div>
+
+                {/* City & Pincode */}
+                <motion.div className="mv-form-row" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.45 }}>
+                  <div className="mv-form-group mv-form-col">
+                    <label htmlFor="city" className="mv-form-label">
+                      City <span className="mv-required">*</span>
+                    </label>
+                    <div className="mv-form-input-wrapper">
+                      <FiMapPin className="mv-form-icon" />
+                      <input
+                        id="city"
+                        type="text"
+                        className="mv-form-input"
+                        name="city"
+                        placeholder="Bangalore"
+                        value={form.city}
+                        onChange={handleChange}
+                        required
+                      />
                     </div>
                   </div>
-                );
-              })}
+
+                  <div className="mv-form-group mv-form-col">
+                    <label htmlFor="pincode" className="mv-form-label">
+                      Pincode <span className="mv-required">*</span>
+                    </label>
+                    <input
+                      id="pincode"
+                      type="text"
+                      className="mv-form-input"
+                      name="pincode"
+                      placeholder="560001"
+                      value={form.pincode}
+                      onChange={handleChange}
+                      required
+                    />
+                  </div>
+                </motion.div>
+
+                {/* Payment Method */}
+                <motion.div className="mv-payment-section" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.5 }}>
+                  <h3 className="mv-payment-title">Payment Method</h3>
+                  <div className="mv-payment-option">
+                    <div className="mv-payment-badge">
+                      <FiZap className="mv-payment-icon" />
+                      <span>UPI</span>
+                    </div>
+                    <p className="mv-payment-text">Google Pay, PhonePe, Paytm</p>
+                  </div>
+                  <p className="mv-payment-note">Secure payment powered by Razorpay</p>
+                </motion.div>
+
+                {/* Submit Button */}
+                <motion.button type="submit" className="mv-btn-primary mv-btn-checkout" disabled={placing} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.55 }}>
+                  {placing ? (
+                    <>
+                      <motion.span animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity }} style={{ display: "inline-block" }}>
+                        ⚡
+                      </motion.span>
+                      Processing…
+                    </>
+                  ) : (
+                    <>
+                      Place Order
+                      <FiZap size={16} style={{ marginLeft: "0.5rem" }} />
+                    </>
+                  )}
+                </motion.button>
+              </form>
             </div>
+          </motion.div>
 
-            <h6 className="fw-semibold mb-2 small text-uppercase text-muted">
-              Pricing
-            </h6>
+          {/* Right: Order Summary */}
+          <motion.div className="mv-checkout-summary-section" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.2 }}>
+            <div className="mv-checkout-summary-card">
+              <h2 className="mv-summary-title">Order Summary</h2>
 
-            <div className="d-flex justify-content-between mb-2 small text-muted">
-              <span>Items total</span>
-              <span>₹{subtotal.toLocaleString("en-IN")}</span>
-            </div>
+              {/* Items List */}
+              <div className="mv-summary-items">
+                <AnimatePresence mode="popLayout">
+                  {cartItems.map((item, index) => {
+                    const unitPrice = item.finalPrice ?? item.price ?? 0;
+                    const qty = item.quantity || 1;
+                    const lineTotal = unitPrice * qty;
 
-            <div className="d-flex justify-content-between mb-2 small text-muted">
-              <span>Delivery</span>
-              <span className={deliveryFee === 0 ? "text-success fw-semibold" : ""}>
-                {deliveryFee === 0 ? "Free" : `₹${deliveryFee}`}
-              </span>
-            </div>
-
-            <div className="d-flex justify-content-between mb-2 small text-muted">
-              <span>Platform fee</span>
-              <span className={platformFee === 0 ? "text-success fw-semibold" : ""}>
-                {platformFee === 0 ? "Free" : `₹${platformFee}`}
-              </span>
-            </div>
-
-            {subtotal > 0 && subtotal <= 1000 && (
-              <div className="small text-muted mb-2">
-                Add ₹{1000 - subtotal} more for{" "}
-                <span className="text-success fw-semibold">
-                  free delivery &amp; platform fee
-                </span>
-                .
+                    return (
+                      <motion.div
+                        key={item._id}
+                        className="mv-summary-item"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, x: -100 }}
+                        transition={{ duration: 0.3, delay: 0.3 + index * 0.05 }}
+                      >
+                        {(item.image || item.images?.[0]) && (
+                          <img
+                            src={item.image || item.images?.[0]}
+                            alt={item.name}
+                            className="mv-summary-item-image"
+                          />
+                        )}
+                        <div className="mv-summary-item-info">
+                          <p className="mv-summary-item-name">{item.name}</p>
+                          <p className="mv-summary-item-qty">Qty: {qty}</p>
+                        </div>
+                        <p className="mv-summary-item-price">₹{lineTotal.toLocaleString("en-IN")}</p>
+                      </motion.div>
+                    );
+                  })}
+                </AnimatePresence>
               </div>
-            )}
 
-            <hr className="my-2" />
+              {/* Pricing Breakdown */}
+              <div className="mv-summary-pricing">
+                <div className="mv-pricing-row">
+                  <span className="mv-pricing-label">Subtotal</span>
+                  <span className="mv-pricing-value">₹{subtotal.toLocaleString("en-IN")}</span>
+                </div>
 
-            <div className="d-flex justify-content-between fw-bold fs-5 mb-0" style={{ color: "var(--lux-ink)" }}>
-              <span>Total</span>
-              <span>₹{grandTotal.toLocaleString("en-IN")}</span>
+                <div className="mv-pricing-row">
+                  <span className="mv-pricing-label">Delivery</span>
+                  <span className={`mv-pricing-value ${deliveryFee === 0 ? "mv-pricing-free" : ""}`}>
+                    {deliveryFee === 0 ? "Free" : `₹${deliveryFee}`}
+                  </span>
+                </div>
+
+                <div className="mv-pricing-row">
+                  <span className="mv-pricing-label">Platform Fee</span>
+                  <span className={`mv-pricing-value ${platformFee === 0 ? "mv-pricing-free" : ""}`}>
+                    {platformFee === 0 ? "Free" : `₹${platformFee}`}
+                  </span>
+                </div>
+
+                {subtotal > 0 && subtotal <= 1000 && (
+                  <motion.p className="mv-pricing-hint" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4, delay: 0.5 }}>
+                    Add ₹{1000 - subtotal} more for <span className="mv-hint-highlight">free delivery &amp; fee</span>
+                  </motion.p>
+                )}
+
+                <div className="mv-pricing-divider" />
+
+                <div className="mv-pricing-total">
+                  <span className="mv-total-label">Total</span>
+                  <span className="mv-total-value">₹{grandTotal.toLocaleString("en-IN")}</span>
+                </div>
+              </div>
+
+              {/* Trust Signals */}
+              <div className="mv-trust-signals">
+                <div className="mv-trust-signal">
+                  <span className="mv-trust-icon">🔒</span>
+                  <span className="mv-trust-text">Secure checkout</span>
+                </div>
+                <div className="mv-trust-signal">
+                  <span className="mv-trust-icon">🚚</span>
+                  <span className="mv-trust-text">Fast delivery</span>
+                </div>
+                <div className="mv-trust-signal">
+                  <span className="mv-trust-icon">↩️</span>
+                  <span className="mv-trust-text">Easy returns</span>
+                </div>
+              </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

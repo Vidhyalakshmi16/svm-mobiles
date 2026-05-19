@@ -3,10 +3,11 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { getProductById } from "../services/api";
 import { useCart } from "../context/CartContext";
 import { toast } from "react-toastify";
-import { FiHeart } from "react-icons/fi";
+import { FiHeart, FiCheck } from "react-icons/fi";
 import { useWishlist } from "../context/WishlistContext";
 import { useAuth } from "../context/AuthContext";
-
+import { motion } from "framer-motion";
+import "./ProductDetail.css";
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -18,6 +19,7 @@ export default function ProductDetail() {
   const [loading, setLoading] = useState(true);
   const [qty, setQty] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
+  const [activeTab, setActiveTab] = useState("description");
   const { user } = useAuth();
 
   useEffect(() => {
@@ -36,26 +38,31 @@ export default function ProductDetail() {
 
   if (loading) {
     return (
-      <div className="container py-5 text-center">
-        <div className="spinner-border text-secondary" role="status" />
+      <div className="mv-pd-loader">
+        <div className="mv-skeleton-main" />
       </div>
     );
   }
 
   if (!product) {
     return (
-      <div className="container py-5">
+      <div className="mv-pd-error">
         <h4>Product not found</h4>
-        <Link to="/products" className="btn btn-dark btn-sm mt-2">
+        <motion.button
+          whileHover={{ y: -2 }}
+          whileTap={{ scale: 0.96 }}
+          onClick={() => navigate("/products")}
+          className="mv-btn-primary"
+        >
           Back to Products
-        </Link>
+        </motion.button>
       </div>
     );
   }
 
   const {
     name,
-    // brand,
+    brand,
     price,
     finalPrice,
     discount,
@@ -71,7 +78,7 @@ export default function ProductDetail() {
   const handleAddToCart = () => {
     if (!inStock) return toast.warn("Out of stock");
     addToCart(product, qty);
-    toast.success("Added to cart");
+    toast.success("Added to cart!");
   };
 
   const handleBuyNow = () => {
@@ -80,217 +87,297 @@ export default function ProductDetail() {
       return;
     }
 
-    // 🔒 Not logged in → go to login
     if (!user) {
       toast.info("Please login to continue");
       navigate("/auth", {
-        state: { from: `/product/${id}` }, // optional redirect back
+        state: { from: `/product/${id}` },
       });
       return;
     }
 
-    // ✅ Logged in → proceed
     addToCart(product, qty);
     navigate("/checkout");
   };
 
-
   return (
-    <div className="container py-4 lux-form">
-      {/* Breadcrumb */}
-      {/* <nav aria-label="breadcrumb" className="mb-3">
-        <ol className="breadcrumb small">
-          <li className="breadcrumb-item">
-            <Link to="/">Home</Link>
-          </li>
-          <li className="breadcrumb-item">
-            <Link to="/products">Products</Link>
-          </li>
-          <li className="breadcrumb-item active" aria-current="page">
-            {name}
-          </li>
-        </ol>
-      </nav> */}
-
-
-      <div className="row g-4">
-        {/* Images */}
-        <div className="col-md-5">
-          <div className="store-panel p-2 position-relative">
-            <button
-              className="btn btn-light rounded-circle position-absolute"
-              style={{ top: 10, right: 10 }}
-              onClick={() => toggleWishlist(product)}
-            >
-              <FiHeart
-                size={18}
-                color={isInWishlist(product._id) ? "#e63946" : "#888"}
-              />
-            </button>
-
-            <img
+    <div className="mv-pd-wrapper">
+      {/* PAGE WRAPPER */}
+      <div className="mv-pd-container">
+        {/* LEFT: IMAGE GALLERY (STICKY) */}
+        <motion.div
+          initial={{ opacity: 0, x: -30 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6 }}
+          className="mv-pd-gallery"
+        >
+          <div className="mv-pd-gallery-main">
+            <motion.img
+              key={activeImage}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3 }}
               src={images[activeImage] || "/placeholder.png"}
               alt={name}
-              className="w-100"
-              style={{ height: 340, objectFit: "contain" }}
+              className="mv-pd-main-image"
             />
 
-            {images.length > 1 && (
-              <div className="d-flex gap-2 justify-content-center mt-2">
-                {images.map((img, i) => (
-                  <img
-                    key={i}
-                    src={img}
-                    alt=""
-                    onClick={() => setActiveImage(i)}
-                    style={{
-                      width: 56,
-                      height: 56,
-                      cursor: "pointer",
-                      borderRadius: 6,
-                      border:
-                        i === activeImage
-                          ? "2px solid #111"
-                          : "1px solid #ddd",
-                    }}
-                  />
-                ))}
-              </div>
+            {/* Wishlist Button */}
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
+              type="button"
+              className="mv-pd-wishlist-btn"
+              onClick={() => toggleWishlist(product)}
+              title={isInWishlist(product._id) ? "Remove from favorites" : "Add to favorites"}
+            >
+              <FiHeart
+                size={20}
+                fill={isInWishlist(product._id) ? "currentColor" : "none"}
+                color={isInWishlist(product._id) ? "#ec4899" : "currentColor"}
+              />
+            </motion.button>
+          </div>
+
+          {/* Thumbnail Strip */}
+          {images.length > 1 && (
+            <div className="mv-pd-thumbnails">
+              {images.map((img, i) => (
+                <motion.button
+                  key={i}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setActiveImage(i)}
+                  className={`mv-pd-thumb ${i === activeImage ? "is-active" : ""}`}
+                >
+                  <img src={img} alt={`${name} ${i + 1}`} />
+                </motion.button>
+              ))}
+            </div>
+          )}
+        </motion.div>
+
+        {/* RIGHT: PRODUCT INFO */}
+        <motion.div
+          initial={{ opacity: 0, x: 30 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+          className="mv-pd-info"
+        >
+          {/* Brand & Name */}
+          {brand && <p className="mv-pd-brand">{brand}</p>}
+          <h1 className="mv-pd-name">{name}</h1>
+
+          {/* Rating (placeholder) */}
+          <div className="mv-pd-rating">
+            <span className="mv-stars">★★★★★</span>
+            <span className="mv-reviews">(128 reviews)</span>
+          </div>
+
+          {/* Price Block */}
+          <div className="mv-pd-prices">
+            <span className="mv-pd-price">
+              ₹{sellingPrice.toLocaleString("en-IN")}
+            </span>
+            {discount > 0 && (
+              <>
+                <span className="mv-pd-mrp">
+                  ₹{price.toLocaleString("en-IN")}
+                </span>
+                <span className="mv-pd-discount">{discount}% OFF</span>
+              </>
             )}
           </div>
-        </div>
 
-        {/* Details */}
-        <div className="col-md-7">
-          <div className="store-panel p-4">
+          {/* Stock Status */}
+          <div className="mv-pd-stock">
+            {inStock ? (
+              <><FiCheck size={16} /> In Stock</>
+            ) : (
+              <>Out of Stock</>
+            )}
+          </div>
 
-            <h3 className="fw-bold mb-2">{name}</h3>
-
-            {/* Price */}
-            <div className="d-flex align-items-baseline gap-2 mb-1">
-              <div className="fs-4 fw-bold">
-                ₹{sellingPrice.toLocaleString("en-IN")}
-              </div>
-              {discount > 0 && (
-                <>
-                  <div className="text-muted text-decoration-line-through small">
-                    ₹{price.toLocaleString("en-IN")}
-                  </div>
-                  <span className="badge bg-success-subtle text-success">
-                    {discount}% OFF
-                  </span>
-                </>
-              )}
-            </div>
-
-            {/* Stock */}
-            <div className="mb-2">
-              {!inStock ? (
-                <span className="badge bg-danger-subtle text-danger">
-                  Out of stock
-                </span>
-              ) : (
-                <span className="badge bg-success-subtle text-success">
-                  In stock
-                </span>
-              )}
-            </div>
-
-            {/* Action Bar */}
-            <div className="pd-action-box">
-              <div className="pd-qty">
-                <button onClick={() => setQty(Math.max(1, qty - 1))}>−</button>
-                <span>{qty}</span>
-                <button
-                  onClick={() => setQty(Math.min(maxQty, qty + 1))}
-                  disabled={qty >= maxQty}
-                >
-                  +
-                </button>
-              </div>
-
-              <button
-                type="button"
-                className="store-btn-primary pd-btn-primary flex-grow-1"
-                onClick={handleAddToCart}
-              >
-                Add to cart
-              </button>
-
-              <button
-                type="button"
-                className="store-btn-ghost pd-btn-secondary flex-grow-1"
-                onClick={handleBuyNow}
-              >
-                Buy now
-              </button>
-            </div>
-
-            {/* Trust */}
-            <div className="pd-trust">
-              <span>🚚 Fast delivery</span>
-              <span>🔒 Secure payments</span>
-            </div>
-
-            {/* Description */}
-            <div className="border-top pt-3 mt-3">
-              <h6 className="fw-semibold mb-2">Product Description</h6>
-              <p className="small text-muted mb-0">
-                {description || "No description available."}
-              </p>
+          {/* Variant Pills (placeholder for colors/storage) */}
+          <div className="mv-pd-variants">
+            <p className="mv-pd-variant-label">Color</p>
+            <div className="mv-pd-variant-pills">
+              <button className="mv-pd-pill is-active">Space Black</button>
+              <button className="mv-pd-pill">Silver</button>
+              <button className="mv-pd-pill">Gold</button>
             </div>
           </div>
-        </div>
+
+          {/* Quantity Stepper */}
+          <div className="mv-pd-qty-section">
+            <p className="mv-pd-qty-label">Quantity</p>
+            <div className="mv-qty-stepper">
+              <button
+                type="button"
+                onClick={() => setQty(Math.max(1, qty - 1))}
+                disabled={qty <= 1}
+                className="mv-qty-btn"
+              >
+                −
+              </button>
+              <span className="mv-qty-value">{qty}</span>
+              <button
+                type="button"
+                onClick={() => setQty(Math.min(maxQty, qty + 1))}
+                disabled={qty >= maxQty}
+                className="mv-qty-btn"
+              >
+                +
+              </button>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="mv-pd-actions">
+            <motion.button
+              whileHover={{ y: -2 }}
+              whileTap={{ scale: 0.96 }}
+              type="button"
+              className="mv-btn-primary mv-pd-btn-add"
+              onClick={handleAddToCart}
+              disabled={!inStock}
+            >
+              Add to Cart →
+            </motion.button>
+
+            <motion.button
+              whileHover={{ y: -2 }}
+              whileTap={{ scale: 0.96 }}
+              type="button"
+              className="mv-btn-ghost mv-pd-btn-buy"
+              onClick={handleBuyNow}
+              disabled={!inStock}
+            >
+              Buy Now
+            </motion.button>
+          </div>
+
+          {/* Trust Signals */}
+          <div className="mv-pd-trust">
+            <div className="mv-trust-item">
+              <span className="mv-trust-icon">🚚</span>
+              <div>
+                <p className="mv-trust-title">Fast Delivery</p>
+                <p className="mv-trust-desc">Within 2-3 days</p>
+              </div>
+            </div>
+            <div className="mv-trust-item">
+              <span className="mv-trust-icon">🔒</span>
+              <div>
+                <p className="mv-trust-title">Secure Payment</p>
+                <p className="mv-trust-desc">SSL Encrypted</p>
+              </div>
+            </div>
+            <div className="mv-trust-item">
+              <span className="mv-trust-icon">↩️</span>
+              <div>
+                <p className="mv-trust-title">Easy Returns</p>
+                <p className="mv-trust-desc">30-day guarantee</p>
+              </div>
+            </div>
+          </div>
+        </motion.div>
       </div>
 
-      {/* Styles */}
-      <style>{`
-        .pd-action-box {
-          display: flex;
-          gap: 10px;
-          align-items: center;
-          margin-top: 10px;
-        }
-        .pd-qty {
-          display: flex;
-          align-items: center;
-          border: 1px solid #d1d5db;
-          border-radius: 999px;
-          overflow: hidden;
-        }
-        .pd-qty button {
-          width: 32px;
-          height: 32px;
-          border: none;
-          background: #f3f4f6;
-          font-size: 18px;
-        }
-        .pd-qty span {
-          width: 36px;
-          text-align: center;
-          font-weight: 600;
-        }
-        .pd-btn-primary,
-        .pd-btn-secondary {
-          flex: 1;
-          height: 36px;
-          border-radius: 999px;
-          font-weight: 600;
-        }
-        .pd-trust {
-          display: flex;
-          gap: 16px;
-          font-size: 13px;
-          color: #6b7280;
-          margin-top: 12px;
-        }
-        .bg-success-subtle {
-          background: #e6f4ea;
-        }
-        .bg-danger-subtle {
-          background: #fde8e8;
-        }
-      `}</style>
+      {/* TABS SECTION */}
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.2 }}
+        className="mv-pd-tabs-section"
+      >
+        <div className="mv-pd-tabs">
+          {["description", "specifications", "reviews"].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`mv-pd-tab ${activeTab === tab ? "is-active" : ""}`}
+            >
+              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            </button>
+          ))}
+        </div>
+
+        <div className="mv-pd-tab-content">
+          {activeTab === "description" && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3 }}
+              className="mv-pd-tab-pane"
+            >
+              <h3>Product Description</h3>
+              <p>{description || "No description available."}</p>
+              <ul className="mv-pd-highlights">
+                <li>Premium build quality</li>
+                <li>Latest processor</li>
+                <li>Outstanding camera system</li>
+                <li>All-day battery life</li>
+              </ul>
+            </motion.div>
+          )}
+
+          {activeTab === "specifications" && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3 }}
+              className="mv-pd-tab-pane"
+            >
+              <h3>Specifications</h3>
+              <table className="mv-specs-table">
+                <tbody>
+                  <tr>
+                    <td>Display</td>
+                    <td>6.1" Retina XDR</td>
+                  </tr>
+                  <tr>
+                    <td>Processor</td>
+                    <td>Latest Gen Chip</td>
+                  </tr>
+                  <tr>
+                    <td>RAM</td>
+                    <td>8GB</td>
+                  </tr>
+                  <tr>
+                    <td>Storage</td>
+                    <td>256GB</td>
+                  </tr>
+                  <tr>
+                    <td>Camera</td>
+                    <td>Dual 48MP</td>
+                  </tr>
+                  <tr>
+                    <td>Battery</td>
+                    <td>4000 mAh</td>
+                  </tr>
+                </tbody>
+              </table>
+            </motion.div>
+          )}
+
+          {activeTab === "reviews" && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3 }}
+              className="mv-pd-tab-pane"
+            >
+              <h3>Customer Reviews</h3>
+              <p className="mv-reviews-notice">Reviews will appear here after customer purchases.</p>
+              <div className="mv-review-item">
+                <p className="mv-review-author">John D.</p>
+                <p className="mv-review-rating">★★★★★</p>
+                <p className="mv-review-text">Excellent phone! Great quality and fast delivery.</p>
+              </div>
+            </motion.div>
+          )}
+        </div>
+      </motion.div>
     </div>
   );
 }

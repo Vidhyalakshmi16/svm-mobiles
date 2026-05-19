@@ -47,7 +47,7 @@ function Navbar() {
         <span>⚡ Free delivery above ₹999 · No Cost EMI available</span>
         <span>Salem's #1 Mobile Store</span>
       </div>
-      <nav className="site-navbar navbar navbar-expand-lg navbar-dark fixed-top px-3 px-lg-4" style={{top:'32px'}}>
+      <nav className="site-navbar navbar navbar-expand-lg navbar-light fixed-top px-3 px-lg-4">
       <Link className="navbar-brand" to="/">
         Sri Vaari Mobiles
       </Link>

@@ -1,73 +1,92 @@
-/* ── Sri Vaari — Light Ice Blue + Purple Theme ── */
-@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap");
 
 :root {
-  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+  --font-display: "Syne", "Plus Jakarta Sans", sans-serif;
 
   --store-nav-height: 4.75rem;
   --store-mobile-top: 3.5rem;
   --store-mobile-bottom: 3.75rem;
 
-  /* Ice Blue + Purple palette */
-  --c-bg: #f0f4ff;
-  --c-surface: #ffffff;
-  --c-surface2: #f8faff;
-  --c-indigo: #4f46e5;
-  --c-purple: #7c3aed;
-  --c-grad: linear-gradient(135deg, #4f46e5, #7c3aed);
-  --c-grad-soft: linear-gradient(135deg, rgba(79,70,229,0.08), rgba(124,58,237,0.05));
-  --c-ink: #1e1b4b;
-  --c-muted: #6b7280;
-  --c-hint: #9ca3af;
-  --c-border: rgba(99,102,241,0.12);
-  --c-border-strong: rgba(79,70,229,0.3);
-  --c-ring: rgba(79,70,229,0.25);
-  --c-shadow-sm: 0 2px 8px rgba(79,70,229,0.07);
-  --c-shadow-md: 0 8px 28px rgba(79,70,229,0.12);
-  --c-shadow-hover: 0 14px 40px rgba(79,70,229,0.18);
-  --c-radius: 12px;
-  --c-radius-lg: 16px;
-  --c-ease: cubic-bezier(0.22, 1, 0.36, 1);
-  --c-t: 0.35s var(--c-ease);
+  /* Blue palette */
+  --blue-900: #0a1628;
+  --blue-800: #0d1f3c;
+  --blue-700: #1a3a6b;
+  --blue-600: #1e50a2;
+  --blue-500: #2563eb;
+  --blue-400: #3b82f6;
+  --blue-300: #60a5fa;
+  --blue-200: #bfdbfe;
+  --blue-100: #dbeafe;
+  --blue-50:  #eff6ff;
 
-  /* Legacy aliases — keeps existing components working */
-  --store-bg: var(--c-bg);
-  --store-bg-subtle: var(--c-grad-soft);
-  --store-surface: var(--c-surface);
-  --store-text: var(--c-ink);
-  --store-muted: var(--c-muted);
-  --store-border: var(--c-border);
-  --store-ring: var(--c-ring);
-  --store-accent: var(--c-indigo);
-  --store-accent-soft: rgba(79,70,229,0.07);
-  --store-shadow-sm: var(--c-shadow-sm);
-  --store-shadow-md: var(--c-shadow-md);
-  --store-shadow-card-hover: var(--c-shadow-hover);
-  --store-radius: var(--c-radius);
-  --store-radius-lg: var(--c-radius-lg);
-  --store-ease: var(--c-ease);
-  --store-t: var(--c-t);
-  --store-t-fast: 0.2s var(--c-ease);
+  /* White/neutral palette */
+  --white: #ffffff;
+  --gray-50: #f8fafc;
+  --gray-100: #f1f5f9;
+  --gray-200: #e2e8f0;
+  --gray-300: #cbd5e1;
+  --gray-400: #94a3b8;
+  --gray-500: #64748b;
+  --gray-600: #475569;
+  --gray-700: #334155;
+  --gray-800: #1e293b;
+  --gray-900: #0f172a;
 
-  /* Old gold aliases → remap to purple */
-  --lux-ink: var(--c-ink);
-  --lux-ivory: var(--c-bg);
-  --lux-paper: var(--c-surface);
-  --lux-gold: var(--c-indigo);
-  --lux-gold-mid: var(--c-purple);
-  --lux-gold-light: rgba(124,58,237,0.15);
-  --lux-gradient-page: var(--c-grad-soft);
-  --lux-gradient-gold: var(--c-grad);
-  --lux-border: var(--c-border);
+  /* Accent */
+  --accent: var(--blue-500);
+  --accent-light: var(--blue-400);
+  --accent-glow: rgba(37, 99, 235, 0.18);
+  --accent-glow2: rgba(37, 99, 235, 0.08);
+
+  /* Store aliases */
+  --store-bg: var(--gray-50);
+  --store-bg-subtle: linear-gradient(165deg, #ffffff 0%, #eff6ff 40%, #dbeafe 100%);
+  --store-surface: var(--white);
+  --store-text: var(--gray-900);
+  --store-muted: var(--gray-500);
+  --store-border: rgba(37, 99, 235, 0.12);
+  --store-ring: rgba(37, 99, 235, 0.3);
+  --store-accent: var(--blue-500);
+  --store-accent-soft: rgba(37, 99, 235, 0.08);
+
+  --store-shadow-sm: 0 1px 0 rgba(255,255,255,0.8) inset, 0 2px 8px rgba(37,99,235,0.06);
+  --store-shadow-md: 0 8px 32px rgba(37,99,235,0.1), 0 2px 8px rgba(37,99,235,0.05);
+  --store-shadow-card-hover: 0 20px 50px rgba(37,99,235,0.15), 0 0 0 1px rgba(37,99,235,0.12);
+
+  --store-radius: 1rem;
+  --store-radius-lg: 1.5rem;
+  --store-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --store-t: 0.4s var(--store-ease);
+  --store-t-fast: 0.2s var(--store-ease);
+
+  /* Legacy gold aliases — remap to blue so old components don't break */
+  --lux-ink: var(--gray-900);
+  --lux-ink-soft: var(--gray-700);
+  --lux-muted: var(--gray-500);
+  --lux-faint: var(--gray-400);
+  --lux-ivory: var(--gray-50);
+  --lux-ivory-mid: var(--gray-100);
+  --lux-paper: var(--white);
+  --lux-gold: var(--blue-600);
+  --lux-gold-mid: var(--blue-500);
+  --lux-gold-light: var(--blue-300);
+  --lux-gold-glow: rgba(37, 99, 235, 0.22);
+  --lux-gradient-page: linear-gradient(165deg, #ffffff 0%, #eff6ff 45%, #dbeafe 100%);
+  --lux-gradient-gold: linear-gradient(135deg, #1a3a6b 0%, #1e50a2 38%, #2563eb 72%, #60a5fa 100%);
+  --lux-gradient-gold-subtle: linear-gradient(135deg, rgba(37,99,235,0.1) 0%, rgba(96,165,250,0.06) 100%);
+  --lux-border: rgba(37, 99, 235, 0.12);
+  --lux-border-strong: rgba(37, 99, 235, 0.25);
+  --lux-ring: rgba(37, 99, 235, 0.35);
 }
 
 html { scroll-behavior: smooth; }
 
 body {
   font-family: var(--font-sans);
-  background: var(--c-bg);
-  color: var(--c-ink);
+  background: linear-gradient(165deg, #ffffff 0%, #eff6ff 45%, #dbeafe 100%);
+  background-color: var(--gray-50);
+  color: var(--gray-900);
   -webkit-font-smoothing: antialiased;
 }
 
