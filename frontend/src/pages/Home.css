@@ -729,17 +729,407 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
  
 
 /* ============ RESPONSIVE ============ */
-@media (max-width: 968px) {
-  .section, .features-section, .testimonials-section { padding: 4.5rem 1.5rem; }
-  .showcase-section, .cta-section { padding: 3rem 1.5rem; }
-  .section-header-split { grid-template-columns: 1fr; gap: 1.5rem; }
+
+/* --- Tablet landscape (≤ 1024px) --- */
+@media (max-width: 1024px) {
+  .hero-section {
+    padding: 0 2rem 4rem;
+    gap: 1rem;
+    min-height: auto;
+  }
+  .section { padding: 6rem 2rem; }
+  .features-section,
+  .testimonials-section { padding: 6rem 2rem; }
+  .showcase-content { padding: 3rem; }
+  .hero-visual { min-height: 520px; }
+  .phone-img { max-width: 300px; }
+  .card-spec  { left: -4%; }
+  .card-camera { right: -4%; }
+}
+
+/* --- Tablet portrait / large phone (≤ 900px) --- */
+@media (max-width: 900px) {
+  .hero-section {
+    grid-template-columns: 1fr;
+    text-align: center;
+    padding: 2rem 1.5rem 3rem;
+    gap: 2rem;
+  }
+  .hero-content { max-width: 100%; margin: 0 auto; }
+  .hero-sub { margin-left: auto; margin-right: auto; }
+  .hero-actions,
+  .hero-trust { justify-content: center; }
+  .hero-visual {
+    order: 2;             /* phone below text on mobile */
+    min-height: 460px;
+    width: 100%;
+  }
+  .hero-bg-3d { opacity: 0.4; }
+
+  .section,
+  .features-section,
+  .testimonials-section { padding: 4.5rem 1.5rem; }
+  .showcase-section,
+  .cta-section { padding: 3rem 1.25rem; }
+
+  .section-header { margin-bottom: 3rem; }
+  .section-header-split { grid-template-columns: 1fr; gap: 1.5rem; text-align: left; }
+
   .showcase-inner { grid-template-columns: 1fr; min-height: auto; }
-  .showcase-content { padding: 3rem 2rem; }
+  .showcase-content { padding: 3rem 2rem; text-align: center; }
+  .showcase-stats { gap: 1.5rem; flex-wrap: wrap; justify-content: center; }
   .showcase-visual { padding: 1rem; }
-  .showcase-stats { gap: 1.2rem; flex-wrap: wrap; }
+  .showcase-visual img { max-height: 360px; }
+
   .cta-inner { padding: 4rem 1.5rem; }
-  .footer { padding: 3rem 1.5rem 2rem; }
-  .footer-top { grid-template-columns: 1fr; gap: 2rem; }
-  .footer-cols { grid-template-columns: repeat(3, 1fr); gap: 1rem; }
-  .footer-bottom { flex-direction: column; gap: 0.5rem; text-align: center; }
+  .products-grid { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.2rem; }
+  .features-grid { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+  .testimonials-grid { grid-template-columns: 1fr; }
+}
+
+/* --- Phone (≤ 600px) --- */
+@media (max-width: 600px) {
+  .hero-title { font-size: clamp(2.2rem, 9vw, 3rem); }
+  .hero-sub   { font-size: 1rem; margin-bottom: 1.8rem; }
+  .hero-actions { gap: 0.6rem; margin-bottom: 2.5rem; }
+  .hero-trust  { gap: 1rem; flex-wrap: wrap; justify-content: center; }
+  .trust-divider { display: none; }
+  .trust-item { align-items: center; }
+
+  .btn { padding: 0.85rem 1.4rem; font-size: 0.9rem; flex: 1 1 auto; justify-content: center; }
+  .btn-primary, .btn-ghost { min-width: 140px; }
+
+  .hero-visual { min-height: 380px; }
+  .tilt-wrapper { max-width: 320px; }
+  .phone-img { max-width: 240px; transform: translateZ(20px); }
+
+  /* Reposition floating cards so they don't overflow */
+  .float-card { padding: 0.6rem 0.8rem; font-size: 0.75rem; }
+  .card-icon  { width: 30px; height: 30px; font-size: 0.95rem; }
+  .card-label { font-size: 0.65rem; }
+  .card-value { font-size: 0.78rem; }
+  .card-spec  { top: 12%;  left: 2%; }
+  .card-camera{ top: 42%;  right: 2%; }
+  .card-rating{ bottom: 4%; }
+
+  /* Brand strip */
+  .brand-strip { padding: 2.5rem 0; }
+  .strip-label { font-size: 0.7rem; padding: 0 1rem; margin-bottom: 1.4rem; }
+  .marquee-track { gap: 2.5rem; }
+  .brand-item { font-size: 1.15rem; }
+
+  /* Sections */
+  .section,
+  .features-section,
+  .testimonials-section { padding: 3.5rem 1rem; }
+  .section-title { font-size: clamp(1.9rem, 7vw, 2.4rem); }
+  .section-sub   { font-size: 0.95rem; }
+
+  /* Products */
+  .products-grid { grid-template-columns: 1fr; gap: 1rem; }
+  .product-info { padding: 1.1rem; }
+
+  /* Showcase */
+  .showcase-section { padding: 2rem 1rem; }
+  .showcase-content { padding: 2.2rem 1.4rem; }
+  .showcase-title   { font-size: clamp(2rem, 7vw, 2.6rem); }
+  .showcase-stats   { gap: 1rem 1.6rem; padding: 1.2rem 0; }
+  .showcase-stats strong { font-size: 1.3rem; }
+  .showcase-visual img   { max-height: 280px; max-width: 90%; }
+
+  /* Features */
+  .features-grid { grid-template-columns: 1fr; }
+  .feature-card  { padding: 1.8rem 1.4rem; }
+
+  /* Testimonials */
+  .testimonial-card { padding: 1.6rem 1.4rem; }
+  .testimonial-card blockquote { font-size: 0.95rem; }
+
+  /* CTA */
+  .cta-section { padding: 2rem 1rem; }
+  .cta-inner   { padding: 3rem 1.2rem; border-radius: 18px; }
+  .cta-title   { font-size: clamp(1.9rem, 7vw, 2.4rem); }
+  .cta-sub     { font-size: 0.95rem; margin-bottom: 1.8rem; }
+  .cta-actions { flex-direction: column; gap: 0.6rem; }
+  .cta-actions .btn { width: 100%; }
+}
+
+/* --- Very small phones (≤ 380px) --- */
+@media (max-width: 380px) {
+  .hero-visual { min-height: 340px; }
+  .phone-img   { max-width: 200px; }
+  .card-spec, .card-camera { display: none; } /* keep only rating card */
+}
+
+/* --- Touch devices: disable mouse-tilt jitter --- */
+@media (hover: none) {
+  .phone-mockup { transform: none !important; }
+  .product-card:hover { transform: none; box-shadow: var(--shadow-sm); }
+  .feature-card:hover { transform: none; }
+}
+
+/* ============ FLOATING CARDS — MOBILE ONLY ============ */
+@media (max-width: 600px) {
+  .float-card {
+    padding: 0.45rem 0.65rem;
+    border-radius: 10px;
+    gap: 0.45rem;
+    font-size: 0.7rem;
+  }
+  .card-icon {
+    width: 24px;
+    height: 24px;
+    font-size: 0.8rem;
+    border-radius: 7px;
+  }
+  .card-label { font-size: 0.6rem; }
+  .card-value { font-size: 0.7rem; }
+  .rating-stars { font-size: 0.7rem; letter-spacing: 1px; }
+ 
+  /* Pull them in so they don't overflow the smaller phone visual */
+  .card-spec   { top: 14%; left: 0%; }
+  .card-camera { top: 44%; right: 0%; }
+  .card-rating { bottom: 4%; padding: 0.5rem 0.7rem; }
+}
+ 
+/* Hide the two side cards on very small phones, keep only the rating */
+@media (max-width: 380px) {
+  .card-spec,
+  .card-camera { display: none; }
+}
+
+/* ============ PHONE FINDER ============ */
+.finder-section {
+  padding: 8rem 3rem;
+  background: linear-gradient(180deg, var(--bg) 0%, #f5f3ff 100%);
+}
+ 
+.finder-card {
+  max-width: 920px;
+  margin: 0 auto;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 3rem;
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  overflow: hidden;
+}
+.finder-card::before {
+  content: "";
+  position: absolute;
+  top: -40%;
+  right: -20%;
+  width: 60%;
+  height: 120%;
+  background: radial-gradient(circle, rgba(124, 58, 237, 0.08), transparent 60%);
+  filter: blur(40px);
+  pointer-events: none;
+}
+ 
+/* Progress */
+.finder-progress { margin-bottom: 2.5rem; position: relative; z-index: 2; }
+.finder-progress-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ink-mute);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 0.6rem;
+}
+.finder-progress-bar {
+  width: 100%;
+  height: 6px;
+  background: var(--line);
+  border-radius: 50px;
+  overflow: hidden;
+}
+.finder-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4f46e5, #ec4899);
+  border-radius: 50px;
+}
+ 
+/* Step / Question */
+.finder-step { position: relative; z-index: 2; }
+.finder-question {
+  font-size: clamp(1.4rem, 2.5vw, 1.8rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin-bottom: 1.8rem;
+  line-height: 1.3;
+}
+ 
+.finder-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+ 
+.finder-option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  padding: 1.4rem;
+  background: var(--bg);
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius);
+  transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+  position: relative;
+  overflow: hidden;
+}
+.finder-option::after {
+  content: "→";
+  position: absolute;
+  top: 1.2rem;
+  right: 1.2rem;
+  opacity: 0;
+  transition: all 0.3s;
+  color: var(--accent);
+  font-size: 1.1rem;
+}
+.finder-option:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  box-shadow: var(--shadow-md);
+}
+.finder-option:hover::after { opacity: 1; transform: translateX(4px); }
+ 
+.finder-option-icon {
+  font-size: 1.8rem;
+  margin-bottom: 0.8rem;
+  display: block;
+}
+.finder-option-label {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+  margin-bottom: 0.25rem;
+}
+.finder-option-desc {
+  font-size: 0.82rem;
+  color: var(--ink-mute);
+  line-height: 1.4;
+}
+ 
+.finder-back {
+  margin-top: 1.8rem;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--ink-mute);
+  transition: color 0.2s;
+}
+.finder-back:hover { color: var(--ink); }
+ 
+/* Result */
+.finder-result {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 2.5rem;
+  align-items: center;
+  position: relative;
+  z-index: 2;
+}
+ 
+.finder-result-image {
+  position: relative;
+  aspect-ratio: 1/1;
+  background: linear-gradient(135deg, #fafaf9, #ede9fe);
+  border-radius: var(--radius-lg);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+.finder-result-image img {
+  width: 70%;
+  max-height: 80%;
+  object-fit: contain;
+  filter: drop-shadow(0 30px 50px rgba(79, 70, 229, 0.25));
+  position: relative;
+  z-index: 2;
+}
+.finder-result-glow {
+  position: absolute;
+  width: 70%;
+  height: 70%;
+  background: radial-gradient(circle, rgba(168, 85, 247, 0.3), transparent 70%);
+  filter: blur(40px);
+  animation: glowPulse 4s ease-in-out infinite;
+}
+ 
+.finder-result-body { display: flex; flex-direction: column; }
+.finder-result-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-soft);
+  padding: 0.4rem 0.9rem;
+  border-radius: 50px;
+  width: fit-content;
+  margin-bottom: 1rem;
+}
+.finder-result-name {
+  font-size: clamp(1.8rem, 3vw, 2.4rem);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin-bottom: 0.8rem;
+}
+.finder-result-reason {
+  font-size: 1rem;
+  color: var(--ink-mute);
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+.finder-result-price {
+  display: flex;
+  align-items: baseline;
+  gap: 0.8rem;
+  margin-bottom: 1.8rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--line);
+}
+.finder-result-price span {
+  font-size: 1.8rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.finder-result-price small {
+  font-size: 0.85rem;
+  color: var(--ink-mute);
+}
+.finder-result-actions { display: flex; gap: 0.7rem; flex-wrap: wrap; }
+ 
+/* ===== Mobile ===== */
+@media (max-width: 768px) {
+  .finder-section { padding: 4.5rem 1rem; }
+  .finder-card    { padding: 1.8rem 1.4rem; border-radius: 18px; }
+  .finder-options { grid-template-columns: repeat(2, 1fr); gap: 0.7rem; }
+  .finder-option  { padding: 1rem; }
+  .finder-option-icon  { font-size: 1.4rem; margin-bottom: 0.5rem; }
+  .finder-option-label { font-size: 0.9rem; }
+  .finder-option-desc  { font-size: 0.74rem; }
+  .finder-option::after { display: none; }
+ 
+  .finder-result {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    text-align: center;
+  }
+  .finder-result-image { aspect-ratio: 4/3; max-height: 280px; }
+  .finder-result-badge { margin-left: auto; margin-right: auto; }
+  .finder-result-price { justify-content: center; }
+  .finder-result-actions { justify-content: center; }
+  .finder-result-actions .btn { flex: 1 1 auto; justify-content: center; }
+}
+ 
+@media (max-width: 380px) {
+  .finder-options { grid-template-columns: 1fr; }
 }

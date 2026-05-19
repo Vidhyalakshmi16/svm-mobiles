@@ -1,4 +1,4 @@
-import React, { Suspense, useRef } from "react";
+import React, { Suspense, useRef, useState } from "react";
 import {
   motion,
   useScroll,
@@ -9,7 +9,7 @@ import {
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Float, Environment, MeshDistortMaterial } from "@react-three/drei";
 import "./Home.css";
-
+ 
 /* ---------- Subtle ambient 3D background (not the product) ---------- */
 const AmbientShape = ({ position, color, scale = 1 }) => {
   const ref = useRef();
@@ -20,10 +20,10 @@ const AmbientShape = ({ position, color, scale = 1 }) => {
     }
   });
   return (
-    <Float speed={1} rotationIntensity={0.4} floatIntensity={1.5}>
-      <mesh ref={ref} position={position} scale={scale}>
-        <sphereGeometry args={[1, 64, 64]} />
-        <MeshDistortMaterial
+<Float speed={1} rotationIntensity={0.4} floatIntensity={1.5}>
+<mesh ref={ref} position={position} scale={scale}>
+<sphereGeometry args={[1, 64, 64]} />
+<MeshDistortMaterial
           color={color}
           distort={0.35}
           speed={1.5}
@@ -32,24 +32,24 @@ const AmbientShape = ({ position, color, scale = 1 }) => {
           opacity={0.55}
           transparent
         />
-      </mesh>
-    </Float>
+</mesh>
+</Float>
   );
 };
-
+ 
 const AmbientScene = () => (
-  <Canvas camera={{ position: [0, 0, 6], fov: 50 }} dpr={[1, 2]}>
-    <ambientLight intensity={0.6} />
-    <directionalLight position={[5, 5, 5]} intensity={0.8} />
-    <Suspense fallback={null}>
-      <AmbientShape position={[-3.5, 1.5, -2]} color="#c4b5fd" scale={1.2} />
-      <AmbientShape position={[3.5, -1.5, -1]} color="#fbcfe8" scale={1.4} />
-      <AmbientShape position={[2.5, 2, -3]} color="#bae6fd" scale={0.9} />
-      <Environment preset="studio" />
-    </Suspense>
-  </Canvas>
+<Canvas camera={{ position: [0, 0, 6], fov: 50 }} dpr={[1, 2]}>
+<ambientLight intensity={0.6} />
+<directionalLight position={[5, 5, 5]} intensity={0.8} />
+<Suspense fallback={null}>
+<AmbientShape position={[-3.5, 1.5, -2]} color="#c4b5fd" scale={1.2} />
+<AmbientShape position={[3.5, -1.5, -1]} color="#fbcfe8" scale={1.4} />
+<AmbientShape position={[2.5, 2, -3]} color="#bae6fd" scale={0.9} />
+<Environment preset="studio" />
+</Suspense>
+</Canvas>
 );
-
+ 
 /* ---------- Phone with mouse-tracking 3D tilt ---------- */
 const TiltPhone = () => {
   const x = useMotionValue(0);
@@ -62,15 +62,16 @@ const TiltPhone = () => {
     stiffness: 150,
     damping: 20,
   });
-
+ 
   const handleMouse = (e) => {
+    if (window.matchMedia("(hover: none)").matches) return;
     const rect = e.currentTarget.getBoundingClientRect();
     x.set(e.clientX - rect.left - rect.width / 2);
     y.set(e.clientY - rect.top - rect.height / 2);
   };
-
+ 
   return (
-    <motion.div
+<motion.div
       className="tilt-wrapper"
       onMouseMove={handleMouse}
       onMouseLeave={() => {
@@ -80,12 +81,12 @@ const TiltPhone = () => {
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 1, ease: [0.25, 0.1, 0.25, 1] }}
-    >
-      <motion.div
+>
+<motion.div
         className="phone-mockup"
         style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
-      >
-        <motion.img
+>
+<motion.img
           src="https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=600&q=90&auto=format"
           alt="Premium smartphone"
           className="phone-img"
@@ -93,87 +94,264 @@ const TiltPhone = () => {
           transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }}
         />
         {/* Floating accent cards */}
-        <motion.div
+<motion.div
           className="float-card card-spec"
           initial={{ opacity: 0, x: -40 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 1.2, duration: 0.6 }}
           style={{ transform: "translateZ(60px)" }}
-        >
-          <div className="card-icon">⚡</div>
-          <div>
-            <p className="card-label">Performance</p>
-            <p className="card-value">A17 Pro Chip</p>
-          </div>
-        </motion.div>
-
+>
+<div className="card-icon">⚡</div>
+<div>
+<p className="card-label">Performance</p>
+<p className="card-value">A17 Pro Chip</p>
+</div>
+</motion.div>
+ 
         <motion.div
           className="float-card card-camera"
           initial={{ opacity: 0, x: 40 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 1.4, duration: 0.6 }}
           style={{ transform: "translateZ(80px)" }}
-        >
-          <div className="card-icon">📸</div>
-          <div>
-            <p className="card-label">Pro Camera</p>
-            <p className="card-value">48MP Triple</p>
-          </div>
-        </motion.div>
-
+>
+<div className="card-icon">📸</div>
+<div>
+<p className="card-label">Pro Camera</p>
+<p className="card-value">48MP Triple</p>
+</div>
+</motion.div>
+ 
         <motion.div
           className="float-card card-rating"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1.6, duration: 0.6 }}
           style={{ transform: "translateZ(50px)" }}
-        >
-          <div className="rating-stars">★★★★★</div>
-          <p className="card-value">4.9 / 5.0</p>
-          <p className="card-label">12,847 reviews</p>
-        </motion.div>
-      </motion.div>
-    </motion.div>
+>
+<div className="rating-stars">★★★★★</div>
+<p className="card-value">4.9 / 5.0</p>
+<p className="card-label">12,847 reviews</p>
+</motion.div>
+</motion.div>
+</motion.div>
   );
 };
-
-/* ---------- Data ---------- */
-const featuredPhones = [
+ 
+/* ---------- Phone Finder (interactive quiz) ---------- */
+const finderQuestions = [
   {
-    name: "iPhone 15 Pro Max",
-    tagline: "Titanium. So strong. So light.",
-    price: "$1,199",
-    img: "https://images.unsplash.com/photo-1696446702183-be9605e25712?w=500&q=85&auto=format",
+    key: "priority",
+    label: "What matters most to you?",
+    options: [
+      { id: "camera",  icon: "📸", label: "Camera",      desc: "Pro-level photos & video" },
+      { id: "gaming",  icon: "🎮", label: "Performance", desc: "Gaming & heavy multitasking" },
+      { id: "battery", icon: "🔋", label: "Battery",     desc: "All-day, every day" },
+      { id: "budget",  icon: "💰", label: "Value",       desc: "Best bang for the buck" },
+    ],
   },
   {
-    name: "Galaxy S24 Ultra",
-    tagline: "Galaxy AI is here.",
-    price: "$1,299",
-    img: "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=500&q=85&auto=format",
+    key: "budget",
+    label: "What's your budget?",
+    options: [
+      { id: "low",  icon: "🪙", label: "Under $600",   desc: "Smart picks" },
+      { id: "mid",  icon: "💵", label: "$600 – $1000", desc: "Sweet spot" },
+      { id: "high", icon: "💎", label: "$1000+",        desc: "Flagship tier" },
+      { id: "any",  icon: "✨", label: "No limit",      desc: "Show me the best" },
+    ],
   },
   {
-    name: "Pixel 8 Pro",
-    tagline: "The best of Google.",
-    price: "$999",
-    img: "https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=500&q=85&auto=format",
-  },
-  {
-    name: "OnePlus 12",
-    tagline: "Never settle.",
-    price: "$799",
-    img: "https://images.unsplash.com/photo-1567581935884-3349723552ca?w=500&q=85&auto=format",
+    key: "ecosystem",
+    label: "Preferred ecosystem?",
+    options: [
+      { id: "ios",     icon: "🍎", label: "iOS",     desc: "Apple devices" },
+      { id: "android", icon: "🤖", label: "Android", desc: "Open & flexible" },
+      { id: "either",  icon: "🔀", label: "Either",  desc: "I'm flexible" },
+    ],
   },
 ];
-
+ 
+const recommendations = {
+  "camera|high|ios":     { name: "iPhone 15 Pro Max", price: "$1,199", reason: "48MP Pro camera + ProRAW + cinematic 4K video.", img: "https://images.unsplash.com/photo-1696446702183-be9605e25712?w=500&q=85&auto=format" },
+  "camera|high|android": { name: "Galaxy S24 Ultra",  price: "$1,299", reason: "200MP main sensor with 100x Space Zoom.",        img: "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=500&q=85&auto=format" },
+  "camera|mid|android":  { name: "Pixel 8 Pro",       price: "$999",   reason: "Google's computational photography magic.",      img: "https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=500&q=85&auto=format" },
+  "gaming|high|android": { name: "Galaxy S24 Ultra",  price: "$1,299", reason: "Snapdragon 8 Gen 3 + 12GB RAM, no compromises.", img: "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=500&q=85&auto=format" },
+  "gaming|high|ios":     { name: "iPhone 15 Pro Max", price: "$1,199", reason: "A17 Pro chip — console-grade mobile gaming.",    img: "https://images.unsplash.com/photo-1696446702183-be9605e25712?w=500&q=85&auto=format" },
+  "battery|mid|android": { name: "OnePlus 12",        price: "$799",   reason: "5400mAh + 100W SuperVOOC charging.",             img: "https://images.unsplash.com/photo-1567581935884-3349723552ca?w=500&q=85&auto=format" },
+  "budget|low|android":  { name: "Pixel 7a",          price: "$499",   reason: "Flagship features at a mid-range price.",        img: "https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=500&q=85&auto=format" },
+  "budget|mid|android":  { name: "OnePlus 12",        price: "$799",   reason: "Best specs-per-dollar on the market.",           img: "https://images.unsplash.com/photo-1567581935884-3349723552ca?w=500&q=85&auto=format" },
+};
+ 
+const fallbackPhone = {
+  name: "Galaxy S24 Ultra",
+  price: "$1,299",
+  reason: "An all-rounder that excels at everything.",
+  img: "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=500&q=85&auto=format",
+};
+ 
+const PhoneFinder = () => {
+  const [step, setStep] = useState(0);
+  const [answers, setAnswers] = useState({});
+  const total = finderQuestions.length;
+  const done = step >= total;
+ 
+  const pickAnswer = (key, value) => {
+    setAnswers((a) => ({ ...a, [key]: value }));
+    setStep((s) => s + 1);
+  };
+ 
+  const reset = () => {
+    setAnswers({});
+    setStep(0);
+  };
+ 
+  const getMatch = () => {
+    const k = `${answers.priority}|${answers.budget}|${answers.ecosystem}`;
+    if (recommendations[k]) return recommendations[k];
+    const partial = Object.keys(recommendations).find((key) => {
+      const [p, , e] = key.split("|");
+      return p === answers.priority && (e === answers.ecosystem || answers.ecosystem === "either");
+    });
+    return partial ? recommendations[partial] : fallbackPhone;
+  };
+ 
+  const current = finderQuestions[step];
+  const progress = (step / total) * 100;
+ 
+  return (
+<section className="finder-section">
+<motion.div
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.7 }}
+        className="section-header"
+>
+<span className="section-eyebrow">— Personalized for you</span>
+<h2 className="section-title">
+          Find your <em>perfect&nbsp;phone</em>
+</h2>
+<p className="section-sub">
+          Answer 3 quick questions. We'll match you with the device that actually fits your life.
+</p>
+</motion.div>
+ 
+      <motion.div
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.2 }}
+        transition={{ duration: 0.7 }}
+        className="finder-card"
+>
+        {/* Progress bar */}
+<div className="finder-progress">
+<div className="finder-progress-meta">
+<span>{done ? "Your match" : `Question ${step + 1} of ${total}`}</span>
+<span>{Math.round(done ? 100 : progress)}%</span>
+</div>
+<div className="finder-progress-bar">
+<motion.div
+              className="finder-progress-fill"
+              animate={{ width: `${done ? 100 : progress}%` }}
+              transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
+            />
+</div>
+</div>
+ 
+        {/* Question or Result */}
+        {!done ? (
+<motion.div
+            key={current.key}
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.4 }}
+            className="finder-step"
+>
+<h3 className="finder-question">{current.label}</h3>
+<div className="finder-options">
+              {current.options.map((opt, i) => (
+<motion.button
+                  key={opt.id}
+                  onClick={() => pickAnswer(current.key, opt.id)}
+                  className="finder-option"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.06 }}
+                  whileHover={{ y: -4 }}
+                  whileTap={{ scale: 0.97 }}
+>
+<span className="finder-option-icon">{opt.icon}</span>
+<span className="finder-option-label">{opt.label}</span>
+<span className="finder-option-desc">{opt.desc}</span>
+</motion.button>
+              ))}
+</div>
+ 
+            {step > 0 && (
+<button className="finder-back" onClick={() => setStep((s) => s - 1)}>
+                ← Back
+</button>
+            )}
+</motion.div>
+        ) : (
+<motion.div
+            key="result"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.6 }}
+            className="finder-result"
+>
+            {(() => {
+              const phone = getMatch();
+              return (
+<>
+<div className="finder-result-image">
+<motion.img
+                      src={phone.img}
+                      alt={phone.name}
+                      initial={{ y: 20, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ delay: 0.2, duration: 0.6 }}
+                    />
+<div className="finder-result-glow" />
+</div>
+<div className="finder-result-body">
+<span className="finder-result-badge">✨ Your perfect match</span>
+<h3 className="finder-result-name">{phone.name}</h3>
+<p className="finder-result-reason">{phone.reason}</p>
+<div className="finder-result-price">
+<span>{phone.price}</span>
+<small>or $50/mo with financing</small>
+</div>
+<div className="finder-result-actions">
+<button className="btn btn-primary">
+                        View details <span className="btn-arrow">→</span>
+</button>
+<button className="btn btn-ghost" onClick={reset}>
+                        Start over
+</button>
+</div>
+</div>
+</>
+              );
+            })()}
+</motion.div>
+        )}
+</motion.div>
+</section>
+  );
+};
+ 
+/* ---------- Data ---------- */
 const brands = ["Apple", "Samsung", "Google", "OnePlus", "Xiaomi", "Nothing", "Sony", "Motorola"];
-
+ 
 const features = [
   { icon: "🚚", title: "Free Delivery", desc: "Complimentary 2-day shipping on every order over $50." },
   { icon: "🛡️", title: "2-Year Warranty", desc: "Comprehensive protection on every device, parts and labor included." },
   { icon: "💳", title: "Flexible Financing", desc: "0% APR for 24 months on approved credit. No hidden fees." },
   { icon: "↩️", title: "30-Day Returns", desc: "Not in love? Return it, no questions asked, full refund guaranteed." },
 ];
-
+ 
 /* ---------- Animations ---------- */
 const fadeUp = {
   hidden: { opacity: 0, y: 40 },
@@ -183,94 +361,93 @@ const fadeUp = {
     transition: { delay: i * 0.08, duration: 0.6, ease: [0.25, 0.1, 0.25, 1] },
   }),
 };
-
+ 
 const Home = () => {
   const containerRef = useRef(null);
   const { scrollYProgress } = useScroll({ target: containerRef });
   const heroY = useTransform(scrollYProgress, [0, 0.5], [0, -100]);
-
+ 
   return (
-    <div ref={containerRef} className="home-wrapper">
-
+<div ref={containerRef} className="home-wrapper">
+ 
       {/* ============ HERO ============ */}
-      <section className="hero-section">
-        <div className="hero-bg-3d">
-          <AmbientScene />
-        </div>
-
+<section className="hero-section">
+<div className="hero-bg-3d">
+<AmbientScene />
+</div>
+ 
         <motion.div style={{ y: heroY }} className="hero-content">
-          <motion.span
+<motion.span
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.6 }}
             className="hero-eyebrow"
-          >
-            <span className="pulse-dot"></span> New Flagship Collection 2026
-          </motion.span>
-
+>
+<span className="pulse-dot"></span> New Flagship Collection 2026
+</motion.span>
+ 
           <motion.h1
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5, duration: 0.8 }}
             className="hero-title"
-          >
+>
             Premium devices,
-            
-
-            <span className="accent-text">redefined.</span>
-          </motion.h1>
-
+<br />
+<span className="accent-text">redefined.</span>
+</motion.h1>
+ 
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.7, duration: 0.6 }}
             className="hero-sub"
-          >
+>
             Curated flagship smartphones from the world's leading brands.
             Authentic, warrantied, and delivered in days — not weeks.
-          </motion.p>
-
+</motion.p>
+ 
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.9, duration: 0.6 }}
             className="hero-actions"
-          >
-            <button className="btn btn-primary">
+>
+<button className="btn btn-primary">
               Shop Collection
-              <span className="btn-arrow">→</span>
-            </button>
-            <button className="btn btn-ghost">Compare Models</button>
-          </motion.div>
-
+<span className="btn-arrow">→</span>
+</button>
+<button className="btn btn-ghost">Compare Models</button>
+</motion.div>
+ 
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1.1, duration: 0.8 }}
             className="hero-trust"
-          >
-            <div className="trust-item">
-              <strong>50,000+</strong>
-              <span>Customers worldwide</span>
-            </div>
-            <div className="trust-divider" />
-            <div className="trust-item">
-              <strong>4.9 / 5</strong>
-              <span>Trustpilot rating</span>
-            </div>
-            <div className="trust-divider" />
-            <div className="trust-item">
-              <strong>200+</strong>
-              <span>Models in stock</span>
-            </div>
-          </motion.div>
-        </motion.div>
-
+>
+<div className="trust-item">
+<strong>50,000+</strong>
+<span>Customers worldwide</span>
+</div>
+<div className="trust-divider" />
+<div className="trust-item">
+<strong>4.9 / 5</strong>
+<span>Trustpilot rating</span>
+</div>
+<div className="trust-divider" />
+<div className="trust-item">
+<strong>200+</strong>
+<span>Models in stock</span>
+</div>
+</motion.div>
+</motion.div>
+ 
         <div className="hero-visual">
-          <TiltPhone />
-        </div>
-      </section>
-
+<TiltPhone />
+</div>
+</section>
+ 
       {/* ============ BRAND STRIP ============ */}
 <section className="brand-strip">
 <motion.p
@@ -294,89 +471,8 @@ const Home = () => {
 </div>
 </section>
  
-      {/* ============ FEATURED PRODUCTS ============ */}
-<section className="section section-products">
-<motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.7 }}
-          className="section-header section-header-split"
->
-<div>
-<span className="section-eyebrow">— Featured Collection</span>
-<h2 className="section-title">
-              This season's <em>most&nbsp;wanted</em>
-</h2>
-</div>
-<div className="section-header-aside">
-<p className="section-sub">
-              Handpicked flagships defining the future of mobile — each device
-              authenticated, warrantied, and ready to ship.
-</p>
-<button className="link-btn">
-              View all devices <span>→</span>
-</button>
-</div>
-</motion.div>
- 
-        <div className="products-grid">
-          {featuredPhones.map((phone, i) => (
-<motion.article
-              key={phone.name}
-              custom={i}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, amount: 0.2 }}
-              variants={fadeUp}
-              className="product-card"
->
-<div className="product-image-wrap">
-<span className="product-tag">New</span>
-<motion.img
-                  src={phone.img}
-                  alt={phone.name}
-                  className="product-image"
-                  whileHover={{ scale: 1.08, rotate: -2 }}
-                  transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
-                />
-<motion.button
-                  className="product-wishlist"
-                  aria-label="Add to wishlist"
-                  whileHover={{ scale: 1.15 }}
-                  whileTap={{ scale: 0.9 }}
->
-                  ♡
-</motion.button>
-<div className="product-overlay">
-<button className="overlay-btn">Quick View</button>
-</div>
-</div>
-<div className="product-info">
-<div className="product-meta">
-<span className="product-rating">★ 4.9</span>
-<span className="product-stock">In stock</span>
-</div>
-<h3 className="product-name">{phone.name}</h3>
-<p className="product-tagline">{phone.tagline}</p>
-<div className="product-footer">
-<div>
-<span className="product-price">{phone.price}</span>
-<span className="product-emi">or $50/mo</span>
-</div>
-<motion.button
-                    className="product-cta"
-                    whileHover={{ x: 4 }}
-                    transition={{ type: "spring", stiffness: 400 }}
->
-                    View <span>→</span>
-</motion.button>
-</div>
-</div>
-</motion.article>
-          ))}
-</div>
-</section>
+      {/* ============ FIND YOUR PERFECT PHONE ============ */}
+<PhoneFinder />
  
       {/* ============ SHOWCASE / EDITORIAL BANNER ============ */}
 <section className="showcase-section">
@@ -390,7 +486,8 @@ const Home = () => {
 <div className="showcase-content">
 <span className="section-eyebrow light">— Limited Edition</span>
 <h2 className="showcase-title">
-              Titanium.<br />
+              Titanium.
+<br />
 <em>Engineered to last.</em>
 </h2>
 <p className="showcase-sub">
@@ -552,7 +649,8 @@ const Home = () => {
           />
 <span className="section-eyebrow light">— Join the experience</span>
 <h2 className="cta-title">
-            Your next device,<br />
+            Your next device,
+<br />
 <em>delivered with care.</em>
 </h2>
 <p className="cta-sub">
@@ -577,8 +675,7 @@ const Home = () => {
 </motion.div>
 </section>
  
-
-</div>
+    </div>
   );
 };
  
