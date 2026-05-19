@@ -83,11 +83,11 @@ function Footer() {
         <div className="mv-footer-bottom-inner">
           <p>© {new Date().getFullYear()} Sri Vaari Mobiles. All Rights Reserved.</p>
           <p className="mv-footer-bottom-links">
-            <a href="#">Privacy</a>
+            <a href="/home">Privacy</a>
             <span>·</span>
-            <a href="#">Terms</a>
+            <a href="/home">Terms</a>
             <span>·</span>
-            <a href="#">Cookies</a>
+            <a href="/home">Cookies</a>
           </p>
         </div>
       </div>

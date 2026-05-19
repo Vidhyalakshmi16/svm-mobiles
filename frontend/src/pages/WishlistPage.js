@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useWishlist } from "../context/WishlistContext";
 import { useCart } from "../context/CartContext";
 import { useNavigate } from "react-router-dom";
-import { FiHeart, FiShoppingBag } from "react-icons/fi";
+import { FiHeart } from "react-icons/fi";
 import "./WishlistPage.css";
 
 const WishlistPage = () => {

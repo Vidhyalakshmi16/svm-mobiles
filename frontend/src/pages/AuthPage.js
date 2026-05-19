@@ -337,8 +337,8 @@ const AuthPage = () => {
 
           {/* Terms */}
           <motion.p variants={itemVariants} className="mv-auth-terms">
-            By continuing, you agree to our <a href="#">Terms of Service</a> and{" "}
-            <a href="#">Privacy Policy</a>.
+            By continuing, you agree to our <a href="/home">Terms of Service</a> and{" "}
+            <a href="/home">Privacy Policy</a>.
           </motion.p>
         </motion.div>
       </motion.div>
