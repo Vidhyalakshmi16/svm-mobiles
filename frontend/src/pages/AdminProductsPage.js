@@ -12,6 +12,7 @@ import {
   updateCategory,
   deleteCategoryApi,
   deleteProductReview,
+  addProductReviewAsAdmin,
 } from "../services/api";
 
 export default function AdminProductsPage() {
@@ -38,6 +39,10 @@ export default function AdminProductsPage() {
 
   const [showQuickView, setShowQuickView] = useState(false);
   const [quickViewProduct, setQuickViewProduct] = useState(null);
+  const [adminReviewRating, setAdminReviewRating] = useState(5);
+  const [adminReviewText, setAdminReviewText] = useState("");
+  const [adminReviewName, setAdminReviewName] = useState("");
+  const [submittingAdminReview, setSubmittingAdminReview] = useState(false);
 
   // ---------- FORM STATE ----------
   const [form, setForm] = useState({
@@ -288,6 +293,34 @@ export default function AdminProductsPage() {
     }
   };
 
+  const handleAddAdminReview = async () => {
+    if (!quickViewProduct?._id) return;
+    if (!adminReviewText.trim()) {
+      toast.warn("Enter review text");
+      return;
+    }
+
+    try {
+      setSubmittingAdminReview(true);
+      const { product } = await addProductReviewAsAdmin(quickViewProduct._id, {
+        rating: adminReviewRating,
+        text: adminReviewText,
+        userName: adminReviewName.trim() || undefined,
+      });
+      toast.success("Review added");
+      setQuickViewProduct(product);
+      setAdminReviewText("");
+      setAdminReviewName("");
+      setAdminReviewRating(5);
+      fetchProducts();
+    } catch (err) {
+      console.error(err);
+      toast.error(err?.response?.data?.message || "Failed to add review");
+    } finally {
+      setSubmittingAdminReview(false);
+    }
+  };
+
   const renderStars = (rating) => {
     const fullStars = Math.floor(rating);
     return "★".repeat(fullStars) + "☆".repeat(5 - fullStars);
@@ -504,11 +537,17 @@ const handleDuplicateProduct = (product) => {
 
   const openQuickView = (product) => {
     setQuickViewProduct(product);
+    setAdminReviewRating(5);
+    setAdminReviewText("");
+    setAdminReviewName("");
     setShowQuickView(true);
   };
 
   const closeQuickView = () => {
     setQuickViewProduct(null);
+    setAdminReviewRating(5);
+    setAdminReviewText("");
+    setAdminReviewName("");
     setShowQuickView(false);
   };
 
@@ -1433,42 +1472,81 @@ const handleDuplicateProduct = (product) => {
               </>
             )}
 
-            {quickViewProduct.reviews?.length > 0 ? (
-              <>
-                <hr />
-                <h6>Reviews ({quickViewProduct.reviews.length})</h6>
-                <div className="list-group">
-                  {quickViewProduct.reviews.map((review) => (
-                    <div
-                      key={review._id}
-                      className="list-group-item"
-                      style={{ border: 0, padding: "1rem 0" }}
-                    >
-                      <div className="d-flex justify-content-between align-items-start gap-2">
-                        <div>
-                          <strong>{review.userName || "Anonymous"}</strong>
-                          <div className="small text-warning">
-                            {renderStars(review.rating)} ({review.rating})
-                          </div>
-                          <small className="text-muted">
-                            {review.createdAt
-                              ? new Date(review.createdAt).toLocaleDateString()
-                              : ""}
-                          </small>
-                        </div>
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-danger"
-                          onClick={() => handleDeleteReview(quickViewProduct._id, review._id)}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                      <p className="mb-0 mt-2">{review.text}</p>
-                    </div>
+            <hr />
+            <h6>Reviews ({quickViewProduct.reviews?.length || 0})</h6>
+
+            <div className="border rounded p-3 mb-3 bg-light">
+              <p className="small text-muted mb-2">Add review as admin</p>
+              <input
+                type="text"
+                className="form-control form-control-sm mb-2"
+                placeholder="Display name (optional)"
+                value={adminReviewName}
+                onChange={(e) => setAdminReviewName(e.target.value)}
+              />
+              <div className="mb-2">
+                <label className="form-label small mb-1">Rating</label>
+                <select
+                  className="form-select form-select-sm"
+                  value={adminReviewRating}
+                  onChange={(e) => setAdminReviewRating(Number(e.target.value))}
+                >
+                  {[5, 4, 3, 2, 1].map((n) => (
+                    <option key={n} value={n}>
+                      {n} star{n > 1 ? "s" : ""}
+                    </option>
                   ))}
-                </div>
-              </>
+                </select>
+              </div>
+              <textarea
+                className="form-control form-control-sm mb-2"
+                rows="3"
+                placeholder="Review text"
+                value={adminReviewText}
+                onChange={(e) => setAdminReviewText(e.target.value)}
+              />
+              <button
+                type="button"
+                className="btn btn-sm btn-primary"
+                onClick={handleAddAdminReview}
+                disabled={submittingAdminReview}
+              >
+                {submittingAdminReview ? "Adding..." : "Add Review"}
+              </button>
+            </div>
+
+            {quickViewProduct.reviews?.length > 0 ? (
+              <div className="list-group">
+                {quickViewProduct.reviews.map((review) => (
+                  <div
+                    key={review._id}
+                    className="list-group-item"
+                    style={{ border: 0, padding: "1rem 0" }}
+                  >
+                    <div className="d-flex justify-content-between align-items-start gap-2">
+                      <div>
+                        <strong>{review.userName || "Anonymous"}</strong>
+                        <div className="small text-warning">
+                          {renderStars(review.rating)} ({review.rating})
+                        </div>
+                        <small className="text-muted">
+                          {review.createdAt
+                            ? new Date(review.createdAt).toLocaleDateString()
+                            : ""}
+                        </small>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-danger"
+                        onClick={() => handleDeleteReview(quickViewProduct._id, review._id)}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                    <p className="mb-0 mt-2">{review.text}</p>
+                  </div>
+                ))}
+              </div>
             ) : (
               <p className="text-muted">No reviews yet for this product.</p>
             )}

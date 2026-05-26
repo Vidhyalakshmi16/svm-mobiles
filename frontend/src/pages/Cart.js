@@ -1,10 +1,17 @@
 import React from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
-import { FiTrash2, FiShoppingBag } from "react-icons/fi";
+import {
+  FiShoppingBag,
+  FiTrash2,
+  FiArrowRight,
+  FiTruck,
+} from "react-icons/fi";
 import "./Cart.css";
+
+const FREE_DELIVERY_THRESHOLD = 1000;
 
 export default function Cart() {
   const navigate = useNavigate();
@@ -16,17 +23,25 @@ export default function Cart() {
     clearCart,
   } = useCart();
 
-  const isEmpty = !cartItems || cartItems.length === 0;
+  const isEmpty = !cartItems?.length;
+
+  const itemCount = cartItems.reduce((n, i) => n + (i.quantity || 1), 0);
 
   const subtotal = cartItems.reduce((sum, item) => {
     const unitPrice = item.finalPrice ?? item.price ?? 0;
-    const qty = item.quantity || 1;
-    return sum + unitPrice * qty;
+    return sum + unitPrice * (item.quantity || 1);
   }, 0);
 
-  const platformFee = subtotal > 1000 ? 0 : 5;
-  const deliveryFee = subtotal === 0 ? 0 : subtotal > 1000 ? 0 : 29;
+  const platformFee = subtotal > FREE_DELIVERY_THRESHOLD ? 0 : 5;
+  const deliveryFee =
+    subtotal === 0 ? 0 : subtotal > FREE_DELIVERY_THRESHOLD ? 0 : 29;
   const grandTotal = subtotal + platformFee + deliveryFee;
+
+  const deliveryProgress = Math.min(
+    100,
+    (subtotal / FREE_DELIVERY_THRESHOLD) * 100
+  );
+  const amountToFreeDelivery = Math.max(0, FREE_DELIVERY_THRESHOLD - subtotal);
 
   const handleCheckout = () => {
     if (!user) {
@@ -38,264 +53,218 @@ export default function Cart() {
 
   if (isEmpty) {
     return (
-      <div className="mv-cart-wrapper mv-cart--empty">
+      <div className="cart-page cart-empty">
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          className="cart-empty-card"
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
-          className="mv-cart-empty-state"
         >
-          <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
-            className="mv-cart-empty-icon"
-          >
-            <FiShoppingBag size={48} />
-          </motion.div>
-
-          <motion.span
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.15 }}
-            className="mv-eyebrow"
-          >
-            Shopping Bag
-          </motion.span>
-
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="mv-cart-empty-title"
-          >
-            Your cart is <em>empty</em>
-          </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.25 }}
-            className="mv-cart-empty-text"
-          >
-            Discover the latest flagship smartphones and premium devices curated just for you.
-          </motion.p>
-
-          <motion.button
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            whileHover={{ y: -2 }}
-            whileTap={{ scale: 0.96 }}
+          <div className="cart-empty-icon">
+            <FiShoppingBag size={32} />
+          </div>
+          <h1>Your cart is empty</h1>
+          <p>Add phones and accessories from our store. Free delivery on orders above ₹1,000.</p>
+          <button
+            type="button"
+            className="cart-btn cart-btn--primary"
             onClick={() => navigate("/products")}
-            className="mv-btn-primary"
           >
-            Browse Collection →
-          </motion.button>
+            Shop now <FiArrowRight size={18} />
+          </button>
         </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="mv-cart-wrapper">
-      {/* PAGE HEADER */}
-      <motion.header
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7, ease: [0.25, 0.1, 0.25, 1] }}
-        className="mv-cart-header"
-      >
-        <span className="mv-eyebrow">— Checkout</span>
-        <h1 className="mv-cart-title">
-          Your <em>cart</em>
-        </h1>
-      </motion.header>
+    <div className="cart-page">
+      <div className="cart-container">
+        <header className="cart-hero">
+          <span className="cart-eyebrow">Shopping cart</span>
+          <h1 className="cart-title">Review your bag</h1>
+          <p className="cart-meta">
+            {itemCount} {itemCount === 1 ? "item" : "items"} · ₹
+            {subtotal.toLocaleString("en-IN")} subtotal
+          </p>
+        </header>
 
-      <div className="mv-cart-container">
-        {/* ITEMS LIST */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.6 }}
-          className="mv-cart-items"
-        >
-          <AnimatePresence mode="popLayout">
-            {cartItems.map((item, index) => {
-              const unitPrice = item.finalPrice ?? item.price ?? 0;
-              const qty = item.quantity || 1;
-              const lineTotal = unitPrice * qty;
+        <div className="cart-layout">
+          <div className="cart-items-panel">
+            <AnimatePresence mode="popLayout">
+              {cartItems.map((item) => {
+                const unitPrice = item.finalPrice ?? item.price ?? 0;
+                const qty = item.quantity || 1;
+                const maxQty =
+                  item.stock !== undefined ? Math.max(1, item.stock) : 99;
+                const lineTotal = unitPrice * qty;
+                const lowStock =
+                  item.stock !== undefined &&
+                  item.stock > 0 &&
+                  item.stock <= 5;
 
-              return (
-                <motion.div
-                  key={item._id}
-                  layout
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, x: -100 }}
-                  transition={{
-                    delay: index * 0.05,
-                    duration: 0.4,
-                    ease: [0.25, 0.1, 0.25, 1],
-                  }}
-                  className="mv-cart-item"
-                >
-                  {/* Product Image */}
-                  <div className="mv-cart-item-image">
-                    <img
-                      src={item.image || item.images?.[0]}
-                      alt={item.name}
+                return (
+                  <motion.article
+                    key={item._id}
+                    layout
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, x: -24 }}
+                    className="cart-item-card"
+                  >
+                    <Link
+                      to={`/product/${item._id}`}
+                      className="cart-item-media"
+                    >
+                      <img
+                        src={item.image || item.images?.[0] || "/placeholder.png"}
+                        alt={item.name}
+                      />
+                    </Link>
+
+                    <div className="cart-item-body">
+                      {item.brand && (
+                        <p className="cart-item-brand">{item.brand}</p>
+                      )}
+                      <Link to={`/product/${item._id}`} className="cart-item-name">
+                        {item.name}
+                      </Link>
+                      <p className="cart-item-unit">
+                        ₹{unitPrice.toLocaleString("en-IN")} each
+                      </p>
+                      {item.stock !== undefined && (
+                        <p
+                          className={`cart-item-stock ${
+                            lowStock ? "cart-item-stock--low" : ""
+                          }`}
+                        >
+                          {item.stock === 0
+                            ? "Out of stock"
+                            : lowStock
+                            ? `Only ${item.stock} left`
+                            : `${item.stock} in stock`}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="cart-item-side">
+                      <div className="cart-qty">
+                        <button
+                          type="button"
+                          className="cart-qty-btn"
+                          onClick={() => updateQuantity(item._id, qty - 1)}
+                          disabled={qty <= 1}
+                          aria-label="Decrease quantity"
+                        >
+                          −
+                        </button>
+                        <span className="cart-qty-val">{qty}</span>
+                        <button
+                          type="button"
+                          className="cart-qty-btn"
+                          onClick={() => updateQuantity(item._id, qty + 1)}
+                          disabled={qty >= maxQty}
+                          aria-label="Increase quantity"
+                        >
+                          +
+                        </button>
+                      </div>
+                      <div className="cart-line-total">
+                        ₹{lineTotal.toLocaleString("en-IN")}
+                      </div>
+                      <button
+                        type="button"
+                        className="cart-remove"
+                        onClick={() => removeFromCart(item._id)}
+                      >
+                        <FiTrash2 size={14} /> Remove
+                      </button>
+                    </div>
+                  </motion.article>
+                );
+              })}
+            </AnimatePresence>
+
+            <div className="cart-toolbar">
+              <button type="button" className="cart-clear" onClick={clearCart}>
+                Clear cart
+              </button>
+            </div>
+          </div>
+
+          <aside className="cart-summary-panel">
+            <div className="cart-summary">
+              <h2>Order summary</h2>
+
+              {subtotal > 0 && subtotal < FREE_DELIVERY_THRESHOLD && (
+                <div className="cart-delivery-progress">
+                  <strong>
+                    <FiTruck size={14} style={{ verticalAlign: "-2px" }} /> Add ₹
+                    {amountToFreeDelivery.toLocaleString("en-IN")} more for free delivery
+                  </strong>
+                  <div className="cart-progress-bar">
+                    <div
+                      className="cart-progress-fill"
+                      style={{ width: `${deliveryProgress}%` }}
                     />
                   </div>
-
-                  {/* Product Info */}
-                  <div className="mv-cart-item-info">
-                    {item.brand && (
-                      <p className="mv-cart-item-brand">{item.brand}</p>
-                    )}
-                    <h4 className="mv-cart-item-name">{item.name}</h4>
-                    <p className="mv-cart-item-unit">
-                      ₹{unitPrice.toLocaleString("en-IN")} per unit
-                    </p>
-                    {item.stock !== undefined && (
-                      <p className="mv-cart-item-stock">
-                        In stock: {item.stock}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Quantity Stepper */}
-                  <div className="mv-qty-stepper">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        updateQuantity(item._id, item.quantity - 1)
-                      }
-                      disabled={item.quantity <= 1}
-                      className="mv-qty-btn"
-                    >
-                      −
-                    </button>
-                    <span className="mv-qty-value">{qty}</span>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        updateQuantity(item._id, item.quantity + 1)
-                      }
-                      className="mv-qty-btn"
-                    >
-                      +
-                    </button>
-                  </div>
-
-                  {/* Price & Remove */}
-                  <div className="mv-cart-item-actions">
-                    <div className="mv-cart-item-price">
-                      ₹{lineTotal.toLocaleString("en-IN")}
-                    </div>
-                    <motion.button
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.95 }}
-                      type="button"
-                      className="mv-cart-item-remove"
-                      onClick={() => removeFromCart(item._id)}
-                      title="Remove from cart"
-                    >
-                      <FiTrash2 size={16} />
-                    </motion.button>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </AnimatePresence>
-
-          {/* Clear Cart Button */}
-          <motion.button
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4 }}
-            onClick={clearCart}
-            className="mv-cart-clear-btn"
-          >
-            Clear Cart
-          </motion.button>
-        </motion.div>
-
-        {/* ORDER SUMMARY SIDEBAR */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25, duration: 0.6 }}
-          className="mv-cart-summary"
-        >
-          <div className="mv-summary-card">
-            <h3 className="mv-summary-title">Order Summary</h3>
-
-            {/* Summary Rows */}
-            <div className="mv-summary-rows">
-              <div className="mv-summary-row">
-                <span className="mv-summary-label">Subtotal</span>
-                <span className="mv-summary-value">
-                  ₹{subtotal.toLocaleString("en-IN")}
-                </span>
-              </div>
-
-              <div className="mv-summary-row">
-                <span className="mv-summary-label">Delivery</span>
-                <span className={`mv-summary-value ${deliveryFee === 0 ? "mv-free" : ""}`}>
-                  {deliveryFee === 0 ? "Free" : `₹${deliveryFee}`}
-                </span>
-              </div>
-
-              <div className="mv-summary-row">
-                <span className="mv-summary-label">Platform Fee</span>
-                <span className={`mv-summary-value ${platformFee === 0 ? "mv-free" : ""}`}>
-                  {platformFee === 0 ? "Free" : `₹${platformFee}`}
-                </span>
-              </div>
-
-              {/* Promo hint */}
-              {subtotal > 0 && subtotal <= 1000 && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="mv-summary-hint"
-                >
-                  Add ₹{(1000 - subtotal).toLocaleString("en-IN")} more for{" "}
-                  <span className="mv-hint-accent">free delivery</span>
-                </motion.div>
+                </div>
               )}
 
-              <div className="mv-summary-divider" />
-
-              <div className="mv-summary-total">
-                <span className="mv-total-label">Total</span>
-                <span className="mv-total-value">
-                  ₹{grandTotal.toLocaleString("en-IN")}
-                </span>
+              <div className="cart-summary-rows">
+                <div className="cart-summary-row">
+                  <span>Subtotal</span>
+                  <strong>₹{subtotal.toLocaleString("en-IN")}</strong>
+                </div>
+                <div className="cart-summary-row">
+                  <span>Delivery</span>
+                  <strong className={deliveryFee === 0 ? "is-free" : ""}>
+                    {deliveryFee === 0 ? "Free" : `₹${deliveryFee}`}
+                  </strong>
+                </div>
+                <div className="cart-summary-row">
+                  <span>Platform fee</span>
+                  <strong className={platformFee === 0 ? "is-free" : ""}>
+                    {platformFee === 0 ? "Free" : `₹${platformFee}`}
+                  </strong>
+                </div>
               </div>
+
+              <div className="cart-summary-total">
+                <span>Total</span>
+                <span>₹{grandTotal.toLocaleString("en-IN")}</span>
+              </div>
+
+              <button
+                type="button"
+                className="cart-btn cart-btn--primary"
+                onClick={handleCheckout}
+              >
+                Checkout <FiArrowRight size={18} />
+              </button>
+              <button
+                type="button"
+                className="cart-btn cart-btn--ghost"
+                onClick={() => navigate("/products")}
+              >
+                Continue shopping
+              </button>
             </div>
+          </aside>
+        </div>
+      </div>
 
-            {/* CTA Button */}
-            <motion.button
-              whileHover={{ y: -2 }}
-              whileTap={{ scale: 0.96 }}
-              onClick={handleCheckout}
-              className="mv-btn-primary mv-btn-block"
-            >
-              Proceed to Checkout →
-            </motion.button>
-
-            {/* Continue Shopping Link */}
-            <motion.button
-              whileHover={{ color: "var(--ink)" }}
-              onClick={() => navigate("/products")}
-              className="mv-btn-ghost mv-btn-block"
-            >
-              Continue Shopping
-            </motion.button>
-          </div>
-        </motion.div>
+      <div className="cart-mobile-bar">
+        <div className="cart-mobile-total">
+          <span>Total</span>
+          <strong>₹{grandTotal.toLocaleString("en-IN")}</strong>
+        </div>
+        <button
+          type="button"
+          className="cart-btn cart-btn--primary"
+          onClick={handleCheckout}
+        >
+          Checkout
+        </button>
       </div>
     </div>
   );

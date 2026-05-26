@@ -1,7 +1,8 @@
 import axios from "axios";
 import api from "./axiosInstance";
 
-const BASE_URL = "https://svm-mobiles.onrender.com/api"; // change if different
+const BASE_URL =
+  process.env.REACT_APP_API_URL || "https://svm-mobiles.onrender.com/api";
 
 
 // Orders
@@ -71,8 +72,18 @@ export const getProductById = async (id) => {
   return res.data;
 };
 
+export const canReviewProductApi = async (id) => {
+  const res = await api.get(`/products/${id}/can-review`);
+  return res.data;
+};
+
 export const addProductReview = async (id, reviewData) => {
   const res = await api.post(`/products/${id}/reviews`, reviewData);
+  return res.data;
+};
+
+export const addProductReviewAsAdmin = async (id, reviewData) => {
+  const res = await api.post(`/products/${id}/reviews/admin`, reviewData);
   return res.data;
 };
 

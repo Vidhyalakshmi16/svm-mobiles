@@ -1,7 +1,8 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "https://svm-mobiles.onrender.com/api", // change if needed
+  baseURL:
+    process.env.REACT_APP_API_URL || "https://svm-mobiles.onrender.com/api",
 });
 
 // Add token automatically
