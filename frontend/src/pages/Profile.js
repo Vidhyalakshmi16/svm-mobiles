@@ -62,7 +62,7 @@ export default function Profile() {
               <strong>{user.email || "-"}</strong>
             </div>
             <div>
-              <span>Role</span>
+              <span>Role</span>  
               <strong>{user.role || "Customer"}</strong>
             </div>
           </div>
