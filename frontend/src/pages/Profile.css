@@ -1,0 +1,227 @@
+:root {
+  --mv-bg: #0f1218;
+  --mv-surface: #131924;
+  --mv-surface-soft: #1b2230;
+  --mv-border: rgba(124, 58, 237, 0.18);
+  --mv-text: #e5e7eb;
+  --mv-muted: #9ca3af;
+  --mv-accent: #7c3aed;
+  --mv-accent-soft: rgba(124, 58, 237, 0.18);
+  --mv-radius: 24px;
+  --mv-radius-sm: 18px;
+}
+
+.mv-profile-page {
+  min-height: 100vh;
+  padding: 5rem 2rem 3rem;
+  background: linear-gradient(180deg, #080b13 0%, #121825 55%, #0b1018 100%);
+  color: var(--mv-text);
+}
+
+.mv-profile-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  max-width: 1100px;
+  margin: 0 auto 2rem;
+}
+
+.mv-eyebrow {
+  display: inline-flex;
+  padding: 0.4rem 1rem;
+  border-radius: 999px;
+  background: rgba(124, 58, 237, 0.12);
+  color: var(--mv-accent);
+  font-size: 0.75rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.mv-profile-title {
+  font-size: clamp(2rem, 3vw, 3.2rem);
+  line-height: 1.05;
+  margin: 0 0 0.9rem;
+}
+
+.mv-profile-lead {
+  max-width: 600px;
+  color: var(--mv-muted);
+  font-size: 1rem;
+  line-height: 1.8;
+}
+
+.mv-profile-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.9rem 1.25rem;
+  border-radius: 999px;
+  background: rgba(79, 70, 229, 0.16);
+  color: white;
+  font-weight: 600;
+  backdrop-filter: blur(16px);
+  box-shadow: 0 20px 80px rgba(79, 70, 229, 0.12);
+}
+
+.mv-profile-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 0.9fr;
+  gap: 2rem;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.mv-profile-card,
+.mv-profile-summary {
+  background: rgba(22, 28, 39, 0.92);
+  border: 1px solid var(--mv-border);
+  border-radius: var(--mv-radius);
+  padding: 2rem;
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.25);
+}
+
+.mv-profile-card-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.mv-profile-card-icon {
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #7c3aed, #4f46e5);
+  color: white;
+  box-shadow: 0 16px 40px rgba(124, 58, 237, 0.2);
+}
+
+.mv-profile-card-header h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.mv-profile-card-header p {
+  margin: 0.35rem 0 0;
+  color: var(--mv-muted);
+}
+
+.mv-profile-details {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.mv-profile-details div {
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.mv-profile-details span {
+  color: var(--mv-muted);
+  font-size: 0.95rem;
+}
+
+.mv-profile-details strong {
+  color: white;
+  font-size: 1rem;
+}
+
+.mv-profile-actions {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.mv-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.95rem 1.5rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+}
+
+.mv-btn-secondary:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(124, 58, 237, 0.35);
+}
+
+.mv-profile-summary {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.mv-summary-card {
+  display: grid;
+  grid-template-columns: 62px 1fr;
+  gap: 1rem;
+  padding: 1.35rem;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.mv-summary-icon {
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  border-radius: 18px;
+  background: rgba(79, 70, 229, 0.14);
+  color: white;
+}
+
+.mv-summary-icon--accent {
+  background: rgba(16, 185, 129, 0.16);
+}
+
+.mv-summary-icon--muted {
+  background: rgba(209, 213, 219, 0.1);
+  color: #e2e8f0;
+}
+
+.mv-summary-card span {
+  display: block;
+  color: var(--mv-muted);
+  margin-bottom: 0.35rem;
+}
+
+.mv-summary-link,
+.mv-summary-copy {
+  display: inline-block;
+  color: var(--mv-accent);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.mv-summary-copy {
+  color: rgba(255, 255, 255, 0.72);
+  font-weight: 500;
+}
+
+@media (max-width: 960px) {
+  .mv-profile-hero,
+  .mv-profile-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mv-profile-page {
+    padding: 3rem 1.25rem 2.5rem;
+  }
+}

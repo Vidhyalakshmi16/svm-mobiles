@@ -1,4 +1,5 @@
 import React, { Suspense, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   motion,
   useScroll,
@@ -154,10 +155,10 @@ const finderQuestions = [
     key: "budget",
     label: "What's your budget?",
     options: [
-      { id: "low",  icon: "🪙", label: "Under $600",   desc: "Smart picks" },
-      { id: "mid",  icon: "💵", label: "$600 – $1000", desc: "Sweet spot" },
-      { id: "high", icon: "💎", label: "$1000+",        desc: "Flagship tier" },
-      { id: "any",  icon: "✨", label: "No limit",      desc: "Show me the best" },
+      { id: "low",  icon: "🪙", label: "Under ₹60,000",       desc: "Smart picks" },
+      { id: "mid",  icon: "💵", label: "₹60,000 – ₹100,000", desc: "Sweet spot" },
+      { id: "high", icon: "💎", label: "₹100,000+",         desc: "Flagship tier" },
+      { id: "any",  icon: "✨", label: "No limit",         desc: "Show me the best" },
     ],
   },
   {
@@ -172,24 +173,25 @@ const finderQuestions = [
 ];
  
 const recommendations = {
-  "camera|high|ios":     { name: "iPhone 15 Pro Max", price: "$1,199", reason: "48MP Pro camera + ProRAW + cinematic 4K video.", img: "https://images.unsplash.com/photo-1696446702183-be9605e25712?w=500&q=85&auto=format" },
-  "camera|high|android": { name: "Galaxy S24 Ultra",  price: "$1,299", reason: "200MP main sensor with 100x Space Zoom.",        img: "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=500&q=85&auto=format" },
-  "camera|mid|android":  { name: "Pixel 8 Pro",       price: "$999",   reason: "Google's computational photography magic.",      img: "https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=500&q=85&auto=format" },
-  "gaming|high|android": { name: "Galaxy S24 Ultra",  price: "$1,299", reason: "Snapdragon 8 Gen 3 + 12GB RAM, no compromises.", img: "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=500&q=85&auto=format" },
-  "gaming|high|ios":     { name: "iPhone 15 Pro Max", price: "$1,199", reason: "A17 Pro chip — console-grade mobile gaming.",    img: "https://images.unsplash.com/photo-1696446702183-be9605e25712?w=500&q=85&auto=format" },
-  "battery|mid|android": { name: "OnePlus 12",        price: "$799",   reason: "5400mAh + 100W SuperVOOC charging.",             img: "https://images.unsplash.com/photo-1567581935884-3349723552ca?w=500&q=85&auto=format" },
-  "budget|low|android":  { name: "Pixel 7a",          price: "$499",   reason: "Flagship features at a mid-range price.",        img: "https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=500&q=85&auto=format" },
-  "budget|mid|android":  { name: "OnePlus 12",        price: "$799",   reason: "Best specs-per-dollar on the market.",           img: "https://images.unsplash.com/photo-1567581935884-3349723552ca?w=500&q=85&auto=format" },
+  "camera|high|ios":     { name: "iPhone 15 Pro Max", price: "₹1,19,900", reason: "48MP Pro camera + ProRAW + cinematic 4K video.", img: "https://images.unsplash.com/photo-1696446702183-be9605e25712?w=500&q=85&auto=format" },
+  "camera|high|android": { name: "Galaxy S24 Ultra",  price: "₹1,29,900", reason: "200MP main sensor with 100x Space Zoom.",        img: "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=500&q=85&auto=format" },
+  "camera|mid|android":  { name: "Pixel 8 Pro",       price: "₹89,900",   reason: "Google's computational photography magic.",      img: "https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=500&q=85&auto=format" },
+  "gaming|high|android": { name: "Galaxy S24 Ultra",  price: "₹1,29,900", reason: "Snapdragon 8 Gen 3 + 12GB RAM, no compromises.", img: "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=500&q=85&auto=format" },
+  "gaming|high|ios":     { name: "iPhone 15 Pro Max", price: "₹1,19,900", reason: "A17 Pro chip — console-grade mobile gaming.",    img: "https://images.unsplash.com/photo-1696446702183-be9605e25712?w=500&q=85&auto=format" },
+  "battery|mid|android": { name: "OnePlus 12",        price: "₹79,900",   reason: "5400mAh + 100W SuperVOOC charging.",             img: "https://images.unsplash.com/photo-1567581935884-3349723552ca?w=500&q=85&auto=format" },
+  "budget|low|android":  { name: "Pixel 7a",          price: "₹44,900",   reason: "Flagship features at a mid-range price.",        img: "https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=500&q=85&auto=format" },
+  "budget|mid|android":  { name: "OnePlus 12",        price: "₹79,900",   reason: "Best specs-per-rupee on the market.",           img: "https://images.unsplash.com/photo-1567581935884-3349723552ca?w=500&q=85&auto=format" },
 };
  
 const fallbackPhone = {
   name: "Galaxy S24 Ultra",
-  price: "$1,299",
+  price: "₹1,29,900",
   reason: "An all-rounder that excels at everything.",
   img: "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=500&q=85&auto=format",
 };
  
 const PhoneFinder = () => {
+  const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState({});
   const total = finderQuestions.length;
@@ -321,10 +323,10 @@ const PhoneFinder = () => {
 <p className="finder-result-reason">{phone.reason}</p>
 <div className="finder-result-price">
 <span>{phone.price}</span>
-<small>or $50/mo with financing</small>
+<small>or ₹4,500/mo with financing</small>
 </div>
 <div className="finder-result-actions">
-<button className="btn btn-primary">
+<button className="btn btn-primary" onClick={() => navigate("/products") }>
                         View details <span className="btn-arrow">→</span>
 </button>
 <button className="btn btn-ghost" onClick={reset}>
@@ -346,7 +348,7 @@ const PhoneFinder = () => {
 const brands = ["Apple", "Samsung", "Google", "OnePlus", "Xiaomi", "Nothing", "Sony", "Motorola"];
  
 const features = [
-  { icon: "🚚", title: "Free Delivery", desc: "Complimentary 2-day shipping on every order over $50." },
+  { icon: "🚚", title: "Free Delivery", desc: "Complimentary 2-day shipping on every order over ₹3,999." },
   { icon: "🛡️", title: "2-Year Warranty", desc: "Comprehensive protection on every device, parts and labor included." },
   { icon: "💳", title: "Flexible Financing", desc: "0% APR for 24 months on approved credit. No hidden fees." },
   { icon: "↩️", title: "30-Day Returns", desc: "Not in love? Return it, no questions asked, full refund guaranteed." },
@@ -364,6 +366,7 @@ const fadeUp = {
  
 const Home = () => {
   const containerRef = useRef(null);
+  const navigate = useNavigate();
   const { scrollYProgress } = useScroll({ target: containerRef });
   const heroY = useTransform(scrollYProgress, [0, 0.5], [0, -100]);
  
@@ -413,16 +416,15 @@ const Home = () => {
             transition={{ delay: 0.9, duration: 0.6 }}
             className="hero-actions"
 >
-<button className="btn btn-primary">
+<button className="btn btn-primary" onClick={() => navigate("/products") }>
               Shop Collection
 <span className="btn-arrow">→</span>
 </button>
-<button className="btn btn-ghost">Compare Models</button>
-</motion.div>
- 
+          </motion.div>
+
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1.1, duration: 0.8 }}
             className="hero-trust"
 >
@@ -508,7 +510,7 @@ const Home = () => {
 <span>Storage</span>
 </div>
 </div>
-<button className="btn btn-light">
+<button className="btn btn-light" onClick={() => navigate("/products") }>
               Discover the collection <span className="btn-arrow">→</span>
 </button>
 </div>
@@ -661,6 +663,7 @@ const Home = () => {
               whileHover={{ scale: 1.04 }}
               whileTap={{ scale: 0.96 }}
               className="btn btn-light"
+              onClick={() => navigate("/products") }
 >
               Browse all devices <span className="btn-arrow">→</span>
 </motion.button>
@@ -668,6 +671,7 @@ const Home = () => {
               whileHover={{ scale: 1.04 }}
               whileTap={{ scale: 0.96 }}
               className="btn btn-ghost-dark"
+              onClick={() => navigate("/contact") }
 >
               Talk to an expert
 </motion.button>

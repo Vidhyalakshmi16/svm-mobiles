@@ -71,6 +71,16 @@ export const getProductById = async (id) => {
   return res.data;
 };
 
+export const addProductReview = async (id, reviewData) => {
+  const res = await api.post(`/products/${id}/reviews`, reviewData);
+  return res.data;
+};
+
+export const deleteProductReview = async (productId, reviewId) => {
+  const res = await api.delete(`/products/${productId}/reviews/${reviewId}`);
+  return res.data;
+};
+
 
 
 // ========= NEW FUNCTIONS FOR CUSTOMER ORDERS PAGE ========= //

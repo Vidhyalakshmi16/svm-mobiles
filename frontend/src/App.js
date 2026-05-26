@@ -17,6 +17,7 @@ import ProductDetail from "./pages/ProductDetail";
 import Checkout from "./pages/Checkout";
 import OrderSuccess from "./pages/OrderSuccess";
 import Orders from "./pages/Orders";
+import Profile from "./pages/Profile";
 import WishlistPage from "./pages/WishlistPage";
 import AuthPage from "./pages/AuthPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
@@ -106,6 +107,14 @@ function App() {
                         <Route path="/contact" element={<Contact />} />
                         <Route path="/cart" element={<Cart />} />
                         <Route path="/order-success" element={<OrderSuccess />} />
+                        <Route
+                          path="/profile"
+                          element={
+                            <PrivateRoute allowedRoles={["customer", "admin"]}>
+                              <Profile />
+                            </PrivateRoute>
+                          }
+                        />
                         <Route path="/wishlist" element={<WishlistPage />} />
                         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                         <Route path="/auth" element={<AuthPage />} />

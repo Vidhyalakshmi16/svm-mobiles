@@ -1,16 +1,13 @@
-// src/pages/Orders.js
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import {
   getMyOrdersApi,
   getMyServiceRequests,
   cancelOrder,
-} from "../services/api";
-import {
+  retryPaymentApi,
   verifyPaymentApi,
-  retryPaymentApi
 } from "../services/api";
-
 
 import {
   FiSmartphone,
@@ -19,58 +16,11 @@ import {
   FiPhone,
   FiClock,
   FiPackage,
+  FiArrowRight,
 } from "react-icons/fi";
 import { useAuth } from "../context/AuthContext";
+import "./Orders.css";
 
-export default function Orders() {
-  const { user } = useAuth();
-
-  const [orders, setOrders] = useState([]);
-  const [serviceRequests, setServiceRequests] = useState([]);
-  const [activeType, setActiveType] = useState("orders"); // "orders" | "service"
-  const [statusFilter, setStatusFilter] = useState("all"); // "all" | "active" | "completed" | "cancelled"
-  const [loading, setLoading] = useState(false);
-  const [cancelLoadingId, setCancelLoadingId] = useState(null);
-
-
-  // ---------- Fetch data ----------
-useEffect(() => {
-  const fetchAll = async () => {
-    try {
-      setLoading(true);
-
-      const [ordersRes, serviceRes] = await Promise.all([
-        getMyOrdersApi(),
-        getMyServiceRequests(),
-      ]);
-
-      setOrders(Array.isArray(ordersRes) ? ordersRes : ordersRes?.data || []);
-      setServiceRequests(
-        Array.isArray(serviceRes) ? serviceRes : serviceRes?.data || []
-      );
-    } catch (err) {
-      console.error("Fetch error:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  fetchAll();
-}, []);
-
-
-  const formatINR = (num = 0) =>
-    Number(num || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 });
-
-  const formatDateTime = (dt) => {
-    if (!dt) return "-";
-    return new Date(dt).toLocaleString("en-IN", {
-      dateStyle: "medium",
-      timeStyle: "short",
-    });
-  };
-
-  // ---------- Normalise status ----------
 const getStatus = (item) => {
   if (item._type === "order") {
     switch (item.status) {
@@ -81,10 +31,12 @@ const getStatus = (item) => {
       case "PAID":
         return "Paid";
       case "IN_PROGRESS":
+      case "IN PROGRESS":
         return "In Progress";
       case "COMPLETED":
         return "Completed";
       case "CANCELLED":
+      case "CANCELED":
         return "Cancelled";
       case "RETURNED":
         return "Returned";
@@ -93,128 +45,145 @@ const getStatus = (item) => {
       case "REFUNDED":
         return "Refunded";
       default:
-        return item.status;
+        return item.status || "Pending";
     }
   }
 
-  // Services
-  if (item._type === "service") {
-    const s = (item.status || "").toLowerCase();
-    if (["new", "assigned", "open", "in progress"].includes(s))
-      return "In Progress";
-    if (["completed", "closed", "resolved"].includes(s))
-      return "Completed";
-    if (["cancelled", "canceled"].includes(s))
-      return "Cancelled";
+  const status = String(item.status || item.statusText || "").toLowerCase();
+  if (["new", "assigned", "open", "in progress", "pending"].includes(status)) {
+    return "In Progress";
+  }
+
+  if (["completed", "closed", "resolved"].includes(status)) {
+    return "Completed";
+  }
+
+  if (["cancelled", "canceled"].includes(status)) {
+    return "Cancelled";
   }
 
   return "In Progress";
 };
 
+const getStatusClass = (status) => {
+  const slug = String(status || "").toLowerCase().replace(/\s+/g, "-");
+  return `mv-orders-status-${slug}`;
+};
 
-  // ---------- Status filter ----------
+export default function Orders() {
+  const { user } = useAuth();
+  const [orders, setOrders] = useState([]);
+  const [serviceRequests, setServiceRequests] = useState([]);
+  const [activeType, setActiveType] = useState("orders");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [loading, setLoading] = useState(false);
+  const [cancelLoadingId, setCancelLoadingId] = useState(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [ordersRes, serviceRes] = await Promise.all([
+          getMyOrdersApi(),
+          getMyServiceRequests(),
+        ]);
+
+        setOrders(Array.isArray(ordersRes) ? ordersRes : ordersRes?.data || []);
+        setServiceRequests(
+          Array.isArray(serviceRes) ? serviceRes : serviceRes?.data || []
+        );
+      } catch (error) {
+        console.error("Orders fetch error:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const formatINR = (value = 0) =>
+    Number(value || 0).toLocaleString("en-IN", {
+      maximumFractionDigits: 2,
+    });
+
+  const formatDateTime = (date) => {
+    if (!date) return "-";
+    return new Date(date).toLocaleString("en-IN", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
+  };
+
   const matchesStatusFilter = (item) => {
-    const status = getStatus(item).toLowerCase();
-
-    if (statusFilter === "all") return true;
-
-    // if (statusFilter === "active") {
-    //   return status === "paid" || status === "in progress";
-    // }
-
-    if (statusFilter === "active") {
-  return ["paid", "in progress", "failed", "payment pending"].includes(status);
-}
-
-
-    if (statusFilter === "completed") {
-      return status === "completed";
-    }
-
-    if (statusFilter === "cancelled") {
-      return status === "cancelled";
-    }
-
-    if (statusFilter === "failed") {
-      return status === "failed";
-    }
-
-    return true;
+    const status = getStatus(item).toLowerCase().replace(/\s+/g, "-");
+    return statusFilter === "all" || status === statusFilter;
   };
 
   const retryPayment = async (orderId) => {
-  try {
-    const res = await retryPaymentApi({ orderId });
+    try {
+      const response = await retryPaymentApi({ orderId });
+      const options = {
+        key: process.env.REACT_APP_RAZORPAY_KEY_ID,
+        amount: response.amount,
+        currency: "INR",
+        order_id: response.razorpayOrderId,
+        name: "Sri Vaari Mobiles",
+        description: "Retry Order Payment",
+        handler: async (res) => {
+          const result = await verifyPaymentApi({ ...res, orderId });
+          if (result) {
+            window.location.reload();
+          } else {
+            alert("Payment verification failed");
+          }
+        },
+        theme: { color: "#7d5f0c" },
+      };
+      new window.Razorpay(options).open();
+    } catch (error) {
+      alert(error.response?.data?.message || "Retry failed");
+    }
+  };
 
-    const options = {
-      key: process.env.REACT_APP_RAZORPAY_KEY_ID,
-      amount: res.amount,
-      currency: "INR",
-      order_id: res.razorpayOrderId,
-      name: "Sri Vaari Mobiles",
-      description: "Retry Order Payment",
+  const handleCancel = async (item) => {
+    if (item._type !== "order") return;
+    if (getStatus(item).toLowerCase() !== "paid") return;
+    if (!window.confirm("Are you sure you want to cancel this order?")) return;
 
-      handler: async (response) => {
-        const result = await verifyPaymentApi({
-          ...response,
-          orderId,
-        });
+    const key = `${item._type}_${item._uid}`;
+    setCancelLoadingId(key);
 
-        if (result) {
-          window.location.reload();
-        } else {
-          alert("Payment verification failed");
-        }
-      },
+    try {
+      await cancelOrder(item._uid);
+      setOrders((previous) =>
+        previous.map((order) =>
+          order._id === item._uid ? { ...order, status: "REFUND_PROCESSING" } : order
+        )
+      );
+    } catch (error) {
+      console.error("Cancel order failed:", error);
+    } finally {
+      setCancelLoadingId(null);
+    }
+  };
 
-      theme: { color: "#7d5f0c" },
-    };
-
-    new window.Razorpay(options).open();
-  } catch (err) {
-    alert(err.response?.data?.message || "Retry failed");
-  }
-};
-
-
-
-
-//   const downloadInvoice = async (orderId) => {
-//   try {
-//     const res = await api.get(`/orders/${orderId}/invoice`, {
-//       responseType: "blob",
-//     });
-
-//     const blob = new Blob([res.data], { type: "application/pdf" });
-//     const url = window.URL.createObjectURL(blob);
-//     const a = document.createElement("a");
-//     a.href = url;
-//     a.download = `invoice_${orderId}.pdf`;
-//     a.click();
-//     window.URL.revokeObjectURL(url);
-//   } catch (err) {
-//     console.error("Invoice download failed:", err);
-//     alert("Failed to download invoice");
-//   }
-// };
-  // ---------- Build combined list ----------
-const combined = [
-  ...orders.map((o) => ({
-    _type: "order",
-    _uid: o._id || o.id,
-    ...o,
-  })),
-  ...serviceRequests.map((s) => ({
-    _type: "service",
-    _uid: s._id || s.id || s.requestId,
-    ...s,
-  })),
-].sort(
-  (a, b) =>
-    new Date(b.createdAt || b.created_on || 0) -
-    new Date(a.createdAt || a.created_on || 0)
-);
-
+  const combined = [
+    ...orders.map((order) => ({
+      _type: "order",
+      _uid: order._id || order.id,
+      ...order,
+    })),
+    ...serviceRequests.map((request) => ({
+      _type: "service",
+      _uid: request._id || request.id || request.requestId,
+      ...request,
+    })),
+  ].sort(
+    (a, b) =>
+      new Date(b.createdAt || b.created_on || 0) -
+      new Date(a.createdAt || a.created_on || 0)
+  );
 
   const visibleCards = combined.filter((item) => {
     if (activeType === "orders" && item._type !== "order") return false;
@@ -222,414 +191,225 @@ const combined = [
     return matchesStatusFilter(item);
   });
 
-  // ---------- Cancel handler ----------
-const handleCancel = async (item) => {
-  const status = getStatus(item).toLowerCase();
-
-  // ✅ Only PAID orders can be cancelled
-  if (item._type === "order" && status !== "paid") return;
-
-  // ❌ Services cancelled via admin only (optional)
-  if (item._type === "service") return;
-
-  if (!window.confirm("Are you sure you want to cancel this order?")) return;
-
-  const key = `${item._type}_${item._uid}`;
-  setCancelLoadingId(key);
-
-  try {
-    await cancelOrder(item._uid);
-
-    setOrders((prev) =>
-      prev.map((o) =>
-        o._id === item._uid ? { ...o, status: "REFUND_PROCESSING" } : o
-      )
-    );
-  } finally {
-    setCancelLoadingId(null);
+  if (!user) {
+    return <Navigate to="/auth" replace />;
   }
-};
 
-
-  // ---------- AUTH GUARD PLACEHOLDER ----------
-if (!user) {
-  return (
-    <div className="container py-5 order-page">
-      <div className="text-center py-5">
-        <FiPackage size={48} className="text-muted mb-3" />
-        <p className="lux-eyebrow">Account</p>
-        <h1 className="lux-heading-lg mb-2">Orders &amp; service</h1>
-        <p className="text-muted mb-4">
-          Login to track your orders, service requests, and download invoices.
-        </p>
-
-        <div className="d-flex justify-content-center gap-3 flex-wrap">
-          <Link to="/auth" className="store-btn-primary px-4">
-            Login
-          </Link>
-          <Link to="/products" className="store-btn-ghost px-4">
-            Browse products
-          </Link>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-
-  // ---------- Loading / empty ----------
   if (loading) {
     return (
-      <div className="container py-5 text-center">
-        <p className="text-muted">Loading your activity…</p>
+      <div className="mv-orders-empty">
+        <div className="mv-orders-empty-card">
+          <p className="mv-orders-empty-copy">Loading your latest activity…</p>
+        </div>
       </div>
     );
   }
 
-  if (!combined || combined.length === 0) {
+  if (visibleCards.length === 0) {
     return (
-      <div className="container py-5 text-center">
-        <p className="lux-eyebrow">Activity</p>
-        <h1 className="lux-heading-lg mb-2">No orders yet</h1>
-        <p className="text-muted mb-4">
-          You haven&apos;t placed any orders or service requests yet.
-        </p>
-        <Link to="/products" className="store-btn-primary px-4">
-          Browse products
-        </Link>
+      <div className="mv-orders-empty">
+        <div className="mv-orders-empty-card">
+          <p className="mv-orders-empty-copy">
+            No {activeType === "orders" ? "orders" : "service requests"} match the current filter.
+          </p>
+          <p className="mv-orders-empty-copy" style={{ marginTop: "1rem", color: "#475569" }}>
+            Try a different status or switch tabs to refresh the list.
+          </p>
+        </div>
       </div>
     );
   }
 
-  // ---------- Main UI ----------
   return (
-    <div className="container py-4 order-page">
-      <div className="mb-4">
-        <p className="lux-eyebrow mb-1">Activity</p>
-        <h1 className="store-page-title mb-1">Orders &amp; service</h1>
-        <small className="text-muted d-block mb-3">
-          {combined.length} record{combined.length > 1 ? "s" : ""} — orders &amp; service requests
-        </small>
-
-  <div className="d-flex flex-wrap gap-2 align-items-center">
-    <div className="btn-group btn-group-sm lux-seg-toggle">
-      <button
-        className={`btn ${
-          activeType === "orders" ? "btn-dark" : "btn-outline-dark"
-        }`}
-        onClick={() => setActiveType("orders")}
-      >
-        Orders
-      </button>
-      <button
-        className={`btn ${
-          activeType === "service" ? "btn-dark" : "btn-outline-dark"
-        }`}
-        onClick={() => setActiveType("service")}
-      >
-        Service
-      </button>
-    </div>
-
-    <select
-      className="form-select form-select-sm"
-      style={{ maxWidth: "160px" }}
-      value={statusFilter}
-      onChange={(e) => setStatusFilter(e.target.value)}
+    <motion.section
+      className="mv-orders-page"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.45 }}
     >
-      <option value="all">All status</option>
-      <option value="active">Active</option>
-      <option value="completed">Completed</option>
-      <option value="cancelled">Cancelled</option>
-      <option value="failed">Failed</option>
-    </select>
-  </div>
-</div>
+      <div className="mv-orders-header">
+        <div>
+          <p className="mv-eyebrow">Activity</p>
+          <h1 className="mv-orders-title">Orders & Service Dashboard</h1>
+          <p className="mv-orders-subtitle">
+            Track every order and service request from one sleek dashboard.
+          </p>
+        </div>
 
-      {/* Cards Grid */}
-      <div className="row g-3">
-        {visibleCards.length === 0 ? (
-    <div className="col-12">
-      <div className="text-center py-5">
-        <FiPackage size={40} className="text-muted mb-3" />
-        <h5 className="fw-semibold">No records found</h5>
-        <p className="text-muted mb-3">
-          There are no {activeType === "orders" ? "orders" : "service requests"}{" "}
-          matching this status.
-        </p>
+        <div className="mv-orders-controls">
+          <div className="mv-orders-tabs">
+            {[
+              { id: "orders", label: "Product Orders" },
+              { id: "service", label: "Service Requests" },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                className={`mv-orders-tab ${
+                  activeType === tab.id ? "mv-orders-tab--active" : ""
+                }`}
+                onClick={() => setActiveType(tab.id)}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
 
-        {activeType === "orders" && (
-          <Link to="/products" className="store-btn-primary btn-sm px-3 py-2">
-            Browse products
-          </Link>
-        )}
+          <div className="mv-orders-filters">
+            {[
+              { id: "all", label: "All" },
+              { id: "paid", label: "Paid" },
+              { id: "payment-pending", label: "Payment Pending" },
+              { id: "in-progress", label: "In Progress" },
+              { id: "completed", label: "Completed" },
+              { id: "cancelled", label: "Cancelled" },
+              { id: "failed", label: "Failed" },
+              { id: "returned", label: "Returned" },
+              { id: "refund-processing", label: "Refund Processing" },
+              { id: "refunded", label: "Refunded" },
+            ].map((filter) => (
+              <button
+                key={filter.id}
+                type="button"
+                className={`mv-orders-filter ${
+                  statusFilter === filter.id ? "mv-orders-filter--active" : ""
+                }`}
+                onClick={() => setStatusFilter(filter.id)}
+              >
+                {filter.label}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
-    </div>
-  ) : (
-    visibleCards.map((item) => {
-      const isOrder = item._type === "order";
-      const status = getStatus(item);
-      // const s = status.toLowerCase();
 
-      const canCancel = isOrder && item.status === "PAID";
-      const canRetry = isOrder && ["PAYMENT_PENDING", "FAILED"].includes(item.status);
-      const canReturn = isOrder && item.status === "COMPLETED";
+      <div className="mv-orders-grid">
+        {visibleCards.map((item) => {
+          const statusLabel = getStatus(item);
+          const statusClass = getStatusClass(statusLabel);
+          const isOrder = item._type === "order";
+          const canRetry = isOrder && ["payment pending", "failed"].includes(statusLabel.toLowerCase());
+          const canCancel = isOrder && statusLabel.toLowerCase() === "paid";
+          const orderNumber = item.orderId || item._id || item._uid || "—";
+          const createdAt = item.createdAt || item.created_on || item.createdAt;
+          const firstItem = Array.isArray(item.items) ? item.items[0] : null;
+          const busy = cancelLoadingId === `${item._type}_${item._uid}`;
 
-      const busy = cancelLoadingId === item._type + "_" + item._uid;
-
-      const statusColorClass =
-        ["Completed", "Refunded"].includes(status)
-          ? "status-pill success"
-          : ["Cancelled", "Failed"].includes(status)
-          ? "status-pill danger"
-          : ["Returned", "Refund Processing"].includes(status)
-          ? "status-pill warning"
-          : "status-pill warning";
-
-
-      return (
-            <div className="col-12 col-md-6 col-lg-4" key={item._uid}>
-              <div className="order-card h-100">
-                {/* Type + status */}
-                <div className="d-flex justify-content-between align-items-start mb-2">
-                  <div className="d-flex align-items-center gap-2">
-                    <div className="type-pill">
-                      {isOrder ? (
-                        <>
-                          <FiPackage size={13} /> <span>Product Order</span>
-                        </>
-                      ) : (
-                        <>
-                          <FiTool size={13} /> <span>Service Request</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  <span className={statusColorClass}>{status}</span>
+          return (
+            <motion.article
+              key={item._uid}
+              className="mv-orders-card"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <div className="mv-orders-card-header">
+                <div className="mv-orders-card-type">
+                  {isOrder ? (
+                    <>
+                      <FiPackage /> <span>Order</span>
+                    </>
+                  ) : (
+                    <>
+                      <FiTool /> <span>Service</span>
+                    </>
+                  )}
                 </div>
+                <span className={`mv-orders-card-status ${statusClass}`}>
+                  {statusLabel}
+                </span>
+              </div>
 
-                {/* ID + date */}
-                <div className="d-flex justify-content-between align-items-center mb-2">
-                  <div>
-                    <div className="small text-muted">ID</div>
-                    <div className="fw-semibold">
-                      #{String(item._uid).slice(-8)}
-                    </div>
+              <div className="mv-orders-card-body">
+                <div className="mv-orders-row">
+                  <div className="mv-orders-item">
+                    <span>Reference</span>
+                    <strong>{orderNumber}</strong>
                   </div>
-                  <div className="text-end small text-muted">
-                    {formatDateTime(item.createdAt)}
+                  <div className="mv-orders-item">
+                    <span>Date</span>
+                    <strong>{formatDateTime(createdAt)}</strong>
                   </div>
                 </div>
 
-                <div className="my-2" />
+                <div className="mv-orders-row">
+                  <div className="mv-orders-item">
+                    <span>Customer</span>
+                    <strong>{item.name || user.name || user.email}</strong>
+                  </div>
+                  <div className="mv-orders-item">
+                    <span>Contact</span>
+                    <strong>{item.phone || item.mobile || "-"}</strong>
+                  </div>
+                </div>
 
-                {/* Middle content */}
                 {isOrder ? (
                   <>
-                    {/* Items */}
-                    <div className="mb-2">
-                      {item.items && item.items.length > 0 && (
-                        <div className="d-flex align-items-center gap-2">
-                          {item.items[0].image && (
-                            <img
-                              src={item.items[0].image}
-                              alt={item.items[0].name}
-                              style={{
-                                width: 42,
-                                height: 42,
-                                borderRadius: 10,
-                                objectFit: "cover",
-                              }}
-                            />
+                    <div className="mv-orders-row">
+                      <div className="mv-orders-item">
+                        <span>Delivery</span>
+                        <strong>
+                          {item.address ? (
+                            <>
+                              {item.address}
+                              <br />
+                              {item.city}, {item.pincode}
+                            </>
+                          ) : (
+                            "Address unavailable"
                           )}
-                          <div>
-                            <div className="small fw-semibold">
-                              {item.items[0].name}
-                            </div>
-                            <div className="small text-muted">
-                              {item.items.length > 1
-                                ? `+ ${item.items.length - 1} more item${
-                                    item.items.length > 2 ? "s" : ""
-                                  }`
-                                : `Qty: ${item.items[0].quantity}`}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Address */}
-                    <div className="small text-muted mb-2">
-                      <div className="fw-semibold text-dark mb-1">
-                        Delivery to
+                        </strong>
                       </div>
-                      {item.customer && (
-                        <>
-                          <div>{item.customer.name}</div>
-                          <div className="d-flex align-items-start gap-1">
-                            <FiMapPin size={12} className="mt-1" />
-                            <span>
-                              {item.customer.address}, {item.customer.city} -{" "}
-                              {item.customer.pincode}
-                            </span>
-                          </div>
-                          <div className="d-flex align-items-center gap-1">
-                            <FiPhone size={12} />
-                            <span>{item.customer.phone}</span>
-                          </div>
-                        </>
-                      )}
+                      <div className="mv-orders-item">
+                        <span>Total</span>
+                        <strong>₹{formatINR(item.total || item.grandTotal || item.amount)}</strong>
+                      </div>
                     </div>
-
-                    {/* Total */}
-                    <div className="d-flex justify-content-between align-items-center mt-2">
-                      <div className="small text-muted">Order Total</div>
-                        <div className="fw-bold text-success fs-6">
-                          ₹{formatINR(
-                            ["REFUND_PROCESSING", "REFUNDED", "RETURNED"].includes(item.status)
-                              ? item.refundAmount
-                              : item.total ?? (item.subtotal + item.deliveryFee + item.platformFee)
-                          )}
-                        </div>
-                    </div>
-                    
-                    {item.status === "REFUND_PROCESSING" && (
-                    <div className="mt-2 p-2 rounded bg-warning-subtle text-warning fw-semibold small">
-                      ₹{formatINR(item.refundAmount)} will be credited to your original payment method in 5–7 working days.
-                    </div>
-                  )}
-
-                  {item.status === "REFUNDED" && (
-                    <div className="mt-2 p-2 rounded bg-success-subtle text-success fw-semibold small">
-                      ₹{formatINR(item.refundAmount)} has been refunded to your original payment method.
-                    </div>
-                  )}
-
                   </>
                 ) : (
                   <>
-                    {/* Service details */}
-                    <div className="small text-muted mb-2">
-                      <div className="d-flex align-items-center gap-2 mb-1">
-                        <FiSmartphone size={14} />
-                        <span>
-                        {item.mobileBrand || "Device"}{" "}
-                        {item.mobileModel ? `• ${item.mobileModel}` : ""}
-                        </span>
+                    <div className="mv-orders-row">
+                      <div className="mv-orders-item">
+                        <span>Service</span>
+                        <strong>{item.serviceType || item.subject || "Repair request"}</strong>
                       </div>
-                      {item.issueType && (
-                        <div className="mb-1">
-                          <span className="fw-semibold text-dark">
-                            Issue:&nbsp;
-                          </span>
-                          <span>{item.issueType}</span>
-                        </div>
-                      )}
-                      {item.preferredDate && (
-                        <div className="d-flex align-items-center gap-2">
-                          <FiClock size={14} />
-                          <span>
-                            Preferred: {item.preferredDate}
-                            {item.preferredTime
-                              ? `, ${item.preferredTime}`
-                              : ""}
-                          </span>
-                        </div>
-                      )}
+                      <div className="mv-orders-item">
+                        <span>Device</span>
+                        <strong>{item.device || firstItem?.name || "Mobile device"}</strong>
+                      </div>
                     </div>
-
-                    {/* Customer basics */}
-                    <div className="small text-muted mb-2">
-                      <div className="fw-semibold text-dark mb-1">
-                        Customer
-                      </div>
-                      <div>{item.name}</div>
-                      <div className="d-flex align-items-center gap-1">
-                        <FiPhone size={12} />
-                        <span>{item.phone}</span>
-                      </div>
-                      {item.address && (
-                        <div className="d-flex align-items-start gap-1">
-                          <FiMapPin size={12} className="mt-1" />
-                          <span>{item.address}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Message */}
-                    {item.message && (
-                      <div
-                        className="small text-muted mb-1"
-                        style={{
-                          maxHeight: 60,
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                        }}
-                      >
-                        “{item.message}”
-                      </div>
-                    )}
                   </>
                 )}
+              </div>
 
-                <hr className="my-2" />
-
+              <div className="mv-orders-actions">
+                <Link to="/orders" className="mv-btn-secondary">
+                  Details <FiArrowRight size={16} />
+                </Link>
                 {canRetry && (
                   <button
-                    className="btn btn-sm btn-warning rounded-pill"
+                    type="button"
+                    className="mv-btn-primary"
                     onClick={() => retryPayment(item._uid)}
                   >
-                    Retry Payment
+                    Retry payment
                   </button>
                 )}
-
-                {canReturn && (
-                  <Link
-                    to={`/return/${item._uid}`}
-                    className="btn btn-sm btn-outline-primary rounded-pill ms-2"
+                {canCancel && (
+                  <button
+                    type="button"
+                    className="mv-btn-secondary"
+                    disabled={busy}
+                    onClick={() => handleCancel(item)}
                   >
-                    Return Item
-                  </Link>
+                    {busy ? "Cancelling…" : "Cancel order"}
+                  </button>
                 )}
-
-                {/* Footer actions */}
-                <div className="d-flex justify-content-between align-items-center mt-1">
-                  <small className="text-muted">
-                    {isOrder ? "Order" : "Service"} status:{" "}
-                    <span className="fw-semibold text-dark">{status}</span>
-                  </small>
-
-                  {canCancel ? (
-                    <button
-                      className="btn btn-sm btn-outline-danger rounded-pill"
-                      disabled={busy}
-                      onClick={() => handleCancel(item)}
-                      style={{ fontSize: "12px", paddingInline: "14px" }}
-                    >
-                      {busy ? "Cancelling..." : "Cancel"}
-                    </button>
-                  ) : (
-                    <span className="small text-muted">Not cancellable</span>
-                  )}
-
-                </div>
-
-                {/* Hint when in progress */}
-                {status === "In Progress" && (
-                  <div className="small text-muted mt-1 text-end">
-                    For changes or issues, please contact the shop.
-                  </div>
-                )}
-
               </div>
-            </div>
+            </motion.article>
           );
-        })
-      )}
+        })}
       </div>
-
-    </div>
+    </motion.section>
   );
 }
-
-

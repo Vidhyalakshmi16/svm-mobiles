@@ -11,6 +11,7 @@ import {
   createCategory,
   updateCategory,
   deleteCategoryApi,
+  deleteProductReview,
 } from "../services/api";
 
 export default function AdminProductsPage() {
@@ -47,11 +48,16 @@ export default function AdminProductsPage() {
     cost: "",
     stock: "",
     category: "",
-    color: "",
+    colors: [],
     description: "",
-    ram: "",
-    storage: "",
+    specifications: {},
   });
+
+  // Specification fields (for UI input)
+  const [specFields, setSpecFields] = useState([]);
+
+  // Color input helper
+  const [colorInput, setColorInput] = useState("");
 
   // images from DB we are KEEPING
   const [existingImages, setExistingImages] = useState([]); // array of URLs
@@ -62,6 +68,22 @@ export default function AdminProductsPage() {
 
   const [extraImageFiles, setExtraImageFiles] = useState([]);
   const [extraImagePreviews, setExtraImagePreviews] = useState([]);
+
+  const normalizeColors = (value) => {
+    if (!Array.isArray(value)) return [];
+    return value
+      .map((item) => String(item || "").trim())
+      .filter(Boolean);
+  };
+
+  const normalizeSpecifications = (value) => {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+    return Object.fromEntries(
+      Object.entries(value).filter(([key, val]) => {
+        return String(key || "").trim() && String(val ?? "").trim();
+      })
+    );
+  };
 
   // Load products & categories on mount
   useEffect(() => {
@@ -123,16 +145,76 @@ export default function AdminProductsPage() {
       cost: "",
       stock: "",
       category: "",
-      color: "",
+      colors: [],
       description: "",
-      ram: "",
-      storage: "",
+      specifications: {},
     });
+    setSpecFields([]);
+    setColorInput("");
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // --------- COLOR HANDLERS ---------
+  const handleAddColor = () => {
+    const nextColor = colorInput.trim();
+    if (!nextColor) {
+      toast.warn("Enter a color name");
+      return;
+    }
+    if (form.colors.includes(nextColor)) {
+      toast.warn("Color already added");
+      return;
+    }
+    setForm((prev) => ({
+      ...prev,
+      colors: normalizeColors([...prev.colors, nextColor]),
+    }));
+    setColorInput("");
+  };
+
+  const handleRemoveColor = (index) => {
+    setForm((prev) => ({
+      ...prev,
+      colors: prev.colors.filter((_, i) => i !== index),
+    }));
+  };
+
+  // --------- SPECIFICATION HANDLERS ---------
+  const handleAddSpecField = () => {
+    setSpecFields([...specFields, { key: "", value: "" }]);
+  };
+
+  const handleUpdateSpecField = (index, field, val) => {
+    const updated = [...specFields];
+    updated[index] = { ...updated[index], [field]: val };
+    setSpecFields(updated);
+
+    // Update form specifications
+    const newSpecs = {};
+    updated.forEach((spec) => {
+      if (spec.key.trim()) {
+        newSpecs[spec.key.trim()] = spec.value.trim();
+      }
+    });
+    setForm((prev) => ({ ...prev, specifications: newSpecs }));
+  };
+
+  const handleRemoveSpecField = (index) => {
+    const updated = specFields.filter((_, i) => i !== index);
+    setSpecFields(updated);
+
+    // Update form specifications
+    const newSpecs = {};
+    updated.forEach((spec) => {
+      if (spec.key.trim()) {
+        newSpecs[spec.key.trim()] = spec.value.trim();
+      }
+    });
+    setForm((prev) => ({ ...prev, specifications: newSpecs }));
   };
 
   // ---------- IMAGE HANDLERS ----------
@@ -189,6 +271,26 @@ export default function AdminProductsPage() {
       console.error(err);
       toast.error("Failed to delete product");
     }
+  };
+
+  const handleDeleteReview = async (productId, reviewId) => {
+    if (!window.confirm("Delete this review?")) return;
+    try {
+      const { product } = await deleteProductReview(productId, reviewId);
+      toast.success("Review deleted");
+      setQuickViewProduct(product);
+      fetchProducts();
+    } catch (err) {
+      console.error(err);
+      toast.error(
+        err?.response?.data?.message || "Failed to delete review"
+      );
+    }
+  };
+
+  const renderStars = (rating) => {
+    const fullStars = Math.floor(rating);
+    return "★".repeat(fullStars) + "☆".repeat(5 - fullStars);
   };
 
   const handleBulkDelete = async () => {
@@ -254,6 +356,12 @@ export default function AdminProductsPage() {
   // ---------- EDIT & DUPLICATE ----------
 
   const openEditDrawer = (product) => {
+    const specs = normalizeSpecifications(product.specifications || {});
+    const specFieldsArray = Object.entries(specs).map(([key, value]) => ({
+      key,
+      value,
+    }));
+    
     setForm({
       name: product.name || "",
       brand: product.brand || "",
@@ -262,11 +370,13 @@ export default function AdminProductsPage() {
       cost: product.cost || "",
       stock: product.stock || "",
       category: product.category?._id || "",
-      color: product.color || "",
-      description: product.description || "",
-      ram: product.ram || "",
-      storage: product.storage || "",
+      colors: normalizeColors(product.colors || []),
+      description: String(product.description || "").trim(),
+      specifications: specs,
     });
+
+    setSpecFields(specFieldsArray);
+    setColorInput("");
 
     const imgs = product.images || [];
     setExistingImages(imgs); // keep all DB images
@@ -282,6 +392,9 @@ export default function AdminProductsPage() {
   };
 
 const handleDuplicateProduct = (product) => {
+  const specs = normalizeSpecifications(product.specifications || {});
+  const specFieldsArray = Object.entries(specs).map(([key, value]) => ({ key, value }));
+  
   setForm({
     name: (product.name || "") + " (Copy)",
     brand: product.brand || "",
@@ -290,11 +403,13 @@ const handleDuplicateProduct = (product) => {
     cost: product.cost || "",
     stock: product.stock || "",
     category: product.category?._id || "",
-    color: product.color || "",
-    description: product.description || "",
-    ram: product.ram || "",
-    storage: product.storage || "",
+    colors: normalizeColors(product.colors || []),
+    description: String(product.description || "").trim(),
+    specifications: specs,
   });
+
+  setSpecFields(specFieldsArray);
+  setColorInput("");
 
   // ✅ keep the images of original product
   const imgs = product.images || [];
@@ -323,12 +438,40 @@ const handleDuplicateProduct = (product) => {
 
     try {
       const fd = new FormData();
+      const sanitizedDescription = String(form.description || "").trim();
+      const pendingColor = String(colorInput || "").trim();
+      const sanitizedColors = normalizeColors(
+        pendingColor ? [...form.colors, pendingColor] : form.colors
+      );
 
-      Object.entries(form).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          fd.append(key, value);
+      // Build specs from visible fields to avoid stale state on quick submit
+      const specsFromFields = {};
+      specFields.forEach((spec) => {
+        const key = String(spec?.key || "").trim();
+        const value = String(spec?.value || "").trim();
+        if (key && value) {
+          specsFromFields[key] = value;
         }
       });
+      const sanitizedSpecifications = normalizeSpecifications(
+        Object.keys(specsFromFields).length > 0
+          ? specsFromFields
+          : form.specifications
+      );
+
+      // Append scalar fields
+      fd.append("name", form.name);
+      fd.append("brand", form.brand);
+      fd.append("price", form.price);
+      fd.append("discount", form.discount || 0);
+      fd.append("cost", form.cost);
+      fd.append("stock", form.stock || 0);
+      fd.append("category", form.category);
+      fd.append("description", sanitizedDescription);
+
+      // Append structured fields as JSON
+      fd.append("colors", JSON.stringify(sanitizedColors));
+      fd.append("specifications", JSON.stringify(sanitizedSpecifications));
 
       fd.append("existingImages", JSON.stringify(existingImages));
 
@@ -863,16 +1006,50 @@ const handleDuplicateProduct = (product) => {
                 <strong>₹{finalPrice.toFixed(2)}</strong>
               </div>
 
-              {/* Color */}
+              {/* Colors */}
               <div className="mb-3">
-                <label className="form-label">Color</label>
-                <input
-                  type="text"
-                  name="color"
-                  className="form-control"
-                  value={form.color}
-                  onChange={handleChange}
-                />
+                <label className="form-label">Colors (Available Options)</label>
+                <div className="d-flex gap-2 mb-2">
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Enter color (e.g., Black, Silver)"
+                    value={colorInput}
+                    onChange={(e) => setColorInput(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAddColor();
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-outline-primary"
+                    onClick={handleAddColor}
+                  >
+                    Add
+                  </button>
+                </div>
+                {form.colors.length > 0 && (
+                  <div className="d-flex flex-wrap gap-2">
+                    {form.colors.map((color, idx) => (
+                      <span
+                        key={idx}
+                        className="badge bg-primary"
+                        style={{ cursor: "pointer" }}
+                      >
+                        {color}
+                        <button
+                          type="button"
+                          className="btn-close btn-close-white ms-1"
+                          style={{ padding: 0 }}
+                          onClick={() => handleRemoveColor(idx)}
+                        />
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Description */}
@@ -885,6 +1062,55 @@ const handleDuplicateProduct = (product) => {
                   value={form.description}
                   onChange={handleChange}
                 />
+              </div>
+
+              {/* Specifications */}
+              <div className="mb-3">
+                <label className="form-label">Specifications</label>
+                <div style={{ maxHeight: "200px", overflowY: "auto" }}>
+                  {specFields.map((spec, idx) => (
+                    <div key={idx} className="row g-2 mb-2">
+                      <div className="col-5">
+                        <input
+                          type="text"
+                          className="form-control form-control-sm"
+                          placeholder="Key (e.g., RAM)"
+                          value={spec.key}
+                          onChange={(e) =>
+                            handleUpdateSpecField(idx, "key", e.target.value)
+                          }
+                        />
+                      </div>
+                      <div className="col-5">
+                        <input
+                          type="text"
+                          className="form-control form-control-sm"
+                          placeholder="Value (e.g., 8GB)"
+                          value={spec.value}
+                          onChange={(e) =>
+                            handleUpdateSpecField(idx, "value", e.target.value)
+                          }
+                        />
+                      </div>
+                      <div className="col-2">
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-danger w-100"
+                          onClick={() => handleRemoveSpecField(idx)}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-success mt-2"
+                  onClick={handleAddSpecField}
+                >
+                  + Add Specification
+                </button>
               </div>
 
               {/* Main Image */}
@@ -1165,16 +1391,86 @@ const handleDuplicateProduct = (product) => {
               {quickViewProduct.category?.name || "-"}
             </p>
 
-            {quickViewProduct.color && (
-              <p>
-                <strong>Color:</strong> {quickViewProduct.color}
-              </p>
+            {quickViewProduct.colors?.length > 0 && (
+              <div className="mb-2">
+                <strong>Colors:</strong>
+                <div className="d-flex flex-wrap gap-2 mt-1">
+                  {quickViewProduct.colors.map((color, idx) => (
+                    <span key={idx} className="badge bg-secondary">
+                      {color}
+                    </span>
+                  ))}
+                </div>
+              </div>
             )}
 
             {quickViewProduct.description && (
               <p>
                 <strong>Description:</strong> {quickViewProduct.description}
               </p>
+            )}
+
+            {quickViewProduct.specifications &&
+              Object.keys(quickViewProduct.specifications || {}).length > 0 && (
+              <>
+                <hr />
+                <p className="mb-2">
+                  <strong>Specifications:</strong>
+                </p>
+                <ul className="list-group mb-3">
+                  {Object.entries(quickViewProduct.specifications).map(
+                    ([key, value]) => (
+                      <li
+                        key={key}
+                        className="list-group-item py-1"
+                        style={{ border: 0, paddingLeft: 0, paddingRight: 0 }}
+                      >
+                        <strong>{key}</strong>: {value}
+                      </li>
+                    )
+                  )}
+                </ul>
+              </>
+            )}
+
+            {quickViewProduct.reviews?.length > 0 ? (
+              <>
+                <hr />
+                <h6>Reviews ({quickViewProduct.reviews.length})</h6>
+                <div className="list-group">
+                  {quickViewProduct.reviews.map((review) => (
+                    <div
+                      key={review._id}
+                      className="list-group-item"
+                      style={{ border: 0, padding: "1rem 0" }}
+                    >
+                      <div className="d-flex justify-content-between align-items-start gap-2">
+                        <div>
+                          <strong>{review.userName || "Anonymous"}</strong>
+                          <div className="small text-warning">
+                            {renderStars(review.rating)} ({review.rating})
+                          </div>
+                          <small className="text-muted">
+                            {review.createdAt
+                              ? new Date(review.createdAt).toLocaleDateString()
+                              : ""}
+                          </small>
+                        </div>
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-danger"
+                          onClick={() => handleDeleteReview(quickViewProduct._id, review._id)}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                      <p className="mb-0 mt-2">{review.text}</p>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <p className="text-muted">No reviews yet for this product.</p>
             )}
 
             {quickViewProduct.images &&

@@ -201,7 +201,20 @@ function Navbar() {
   <li>
     <Link
       className="dropdown-item d-flex align-items-center gap-2 py-2"
-      to="/wishlist" onClick={closeNavbar}
+      to="/profile"
+      onClick={closeNavbar}
+      style={{ fontSize: "0.9rem" }}
+    >
+      <UserCircle size={16} className="text-primary" />
+      Profile
+    </Link>
+  </li>
+
+  <li>
+    <Link
+      className="dropdown-item d-flex align-items-center gap-2 py-2"
+      to="/wishlist"
+      onClick={closeNavbar}
       style={{ fontSize: "0.9rem" }}
     >
       <Heart size={16} className="text-danger" />

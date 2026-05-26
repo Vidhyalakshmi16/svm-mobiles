@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getProductById } from "../services/api";
+import { getProductById, addProductReview } from "../services/api";
 import { useCart } from "../context/CartContext";
 import { toast } from "react-toastify";
 import { FiHeart, FiCheck } from "react-icons/fi";
@@ -8,7 +8,62 @@ import { useWishlist } from "../context/WishlistContext";
 import { useAuth } from "../context/AuthContext";
 import { motion } from "framer-motion";
 import "./ProductDetail.css";
+const normalizeProductData = (data) => {
+  if (!data) return null;
 
+  const normalized = { ...data };
+
+  // Colors may come back as a JSON string or as a non-array object
+  if (typeof normalized.colors === "string") {
+    try {
+      normalized.colors = JSON.parse(normalized.colors);
+    } catch {
+      normalized.colors = [];
+    }
+  }
+
+  if (normalized.colors && !Array.isArray(normalized.colors)) {
+    normalized.colors = Object.values(normalized.colors || {});
+  }
+
+  normalized.colors = Array.isArray(normalized.colors)
+    ? normalized.colors
+        .map((c) => String(c || "").trim())
+        .filter(Boolean)
+    : [];
+
+  // Specifications may come back as a JSON string or as a Map
+  if (typeof normalized.specifications === "string") {
+    try {
+      normalized.specifications = JSON.parse(normalized.specifications);
+    } catch {
+      normalized.specifications = {};
+    }
+  }
+
+  if (normalized.specifications instanceof Map) {
+    normalized.specifications = Object.fromEntries(normalized.specifications);
+  }
+
+  if (
+    typeof normalized.specifications !== "object" ||
+    normalized.specifications === null
+  ) {
+    normalized.specifications = {};
+  }
+
+  normalized.specifications = Object.fromEntries(
+    Object.entries(normalized.specifications).filter(([key, value]) => {
+      return String(key || "").trim() && String(value ?? "").trim();
+    })
+  );
+
+  if (!Array.isArray(normalized.reviews)) {
+    normalized.reviews = [];
+  }
+
+  return normalized;
+};
 export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -20,15 +75,23 @@ export default function ProductDetail() {
   const [qty, setQty] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
   const [activeTab, setActiveTab] = useState("description");
+  const [selectedColor, setSelectedColor] = useState("");
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewText, setReviewText] = useState("");
+  const [submittingReview, setSubmittingReview] = useState(false);
   const { user } = useAuth();
 
   useEffect(() => {
     const fetchProd = async () => {
       try {
         setLoading(true);
-        const data = await getProductById(id);
+        const data = normalizeProductData(await getProductById(id));
         setProduct(data);
         setActiveImage(0);
+
+        if (data?.colors?.length > 0) {
+          setSelectedColor(data.colors[0]);
+        }
       } finally {
         setLoading(false);
       }
@@ -69,7 +132,64 @@ export default function ProductDetail() {
     description,
     images = [],
     stock,
+    colors = [],
+    specifications = {},
+    reviews = [],
   } = product;
+  const specificationEntries = Object.entries(specifications || {});
+
+  // Calculate average rating
+  const calculateAverageRating = () => {
+    if (!reviews || reviews.length === 0) return 5; // Default 5 stars
+    const sum = reviews.reduce((acc, review) => acc + review.rating, 0);
+    return (sum / reviews.length).toFixed(1);
+  };
+
+  const averageRating = calculateAverageRating();
+
+  const handleAddReview = async () => {
+    if (!user) {
+      toast.info("Please login to add a review");
+      return;
+    }
+
+    if (!reviewText.trim()) {
+      toast.warn("Please enter a review");
+      return;
+    }
+
+    try {
+      setSubmittingReview(true);
+      const response = await addProductReview(id, {
+        rating: reviewRating,
+        text: reviewText,
+      });
+
+      toast.success("Review submitted successfully!");
+      setReviewText("");
+      setReviewRating(5);
+
+      const updatedProduct = normalizeProductData(response.product || response);
+      if (updatedProduct) {
+        setProduct(updatedProduct);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.message || "Failed to submit review");
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
+  const renderStars = (rating) => {
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 !== 0;
+    let stars = "";
+    for (let i = 0; i < fullStars; i++) stars += "★";
+    if (hasHalfStar) stars += "½";
+    for (let i = fullStars + (hasHalfStar ? 1 : 0); i < 5; i++) stars += "☆";
+    return stars;
+  };
 
   const sellingPrice = finalPrice ?? price;
   const inStock = stock === undefined ? true : stock > 0;
@@ -167,10 +287,10 @@ export default function ProductDetail() {
           {brand && <p className="mv-pd-brand">{brand}</p>}
           <h1 className="mv-pd-name">{name}</h1>
 
-          {/* Rating (placeholder) */}
+          {/* Rating (dynamic) */}
           <div className="mv-pd-rating">
-            <span className="mv-stars">★★★★★</span>
-            <span className="mv-reviews">(128 reviews)</span>
+            <span className="mv-stars">{renderStars(averageRating)}</span>
+            <span className="mv-reviews">({reviews.length} reviews)</span>
           </div>
 
           {/* Price Block */}
@@ -197,15 +317,24 @@ export default function ProductDetail() {
             )}
           </div>
 
-          {/* Variant Pills (placeholder for colors/storage) */}
-          <div className="mv-pd-variants">
-            <p className="mv-pd-variant-label">Color</p>
-            <div className="mv-pd-variant-pills">
-              <button className="mv-pd-pill is-active">Space Black</button>
-              <button className="mv-pd-pill">Silver</button>
-              <button className="mv-pd-pill">Gold</button>
+          {/* Variant Pills (colors from DB) */}
+          {colors.length > 0 && (
+            <div className="mv-pd-variants">
+              <p className="mv-pd-variant-label">Color</p>
+              <div className="mv-pd-variant-pills">
+                {colors.map((color, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    className={`mv-pd-pill ${selectedColor === color ? "is-active" : ""}`}
+                    onClick={() => setSelectedColor(color)}
+                  >
+                    {color}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Quantity Stepper */}
           <div className="mv-pd-qty-section">
@@ -311,13 +440,7 @@ export default function ProductDetail() {
               className="mv-pd-tab-pane"
             >
               <h3>Product Description</h3>
-              <p>{description || "No description available."}</p>
-              <ul className="mv-pd-highlights">
-                <li>Premium build quality</li>
-                <li>Latest processor</li>
-                <li>Outstanding camera system</li>
-                <li>All-day battery life</li>
-              </ul>
+              <p>{description?.trim() || "No description available."}</p>
             </motion.div>
           )}
 
@@ -329,34 +452,20 @@ export default function ProductDetail() {
               className="mv-pd-tab-pane"
             >
               <h3>Specifications</h3>
-              <table className="mv-specs-table">
-                <tbody>
-                  <tr>
-                    <td>Display</td>
-                    <td>6.1" Retina XDR</td>
-                  </tr>
-                  <tr>
-                    <td>Processor</td>
-                    <td>Latest Gen Chip</td>
-                  </tr>
-                  <tr>
-                    <td>RAM</td>
-                    <td>8GB</td>
-                  </tr>
-                  <tr>
-                    <td>Storage</td>
-                    <td>256GB</td>
-                  </tr>
-                  <tr>
-                    <td>Camera</td>
-                    <td>Dual 48MP</td>
-                  </tr>
-                  <tr>
-                    <td>Battery</td>
-                    <td>4000 mAh</td>
-                  </tr>
-                </tbody>
-              </table>
+              {specificationEntries.length > 0 ? (
+                <table className="mv-specs-table">
+                  <tbody>
+                    {specificationEntries.map(([key, value], idx) => (
+                      <tr key={idx}>
+                        <td><strong>{key}</strong></td>
+                        <td>{value}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <p className="text-muted">No specifications available.</p>
+              )}
             </motion.div>
           )}
 
@@ -368,12 +477,98 @@ export default function ProductDetail() {
               className="mv-pd-tab-pane"
             >
               <h3>Customer Reviews</h3>
-              <p className="mv-reviews-notice">Reviews will appear here after customer purchases.</p>
-              <div className="mv-review-item">
-                <p className="mv-review-author">John D.</p>
-                <p className="mv-review-rating">★★★★★</p>
-                <p className="mv-review-text">Excellent phone! Great quality and fast delivery.</p>
-              </div>
+
+              {/* Add Review Form */}
+              {user && (
+                <div className="mv-add-review-form" style={{ marginBottom: "30px", padding: "20px", backgroundColor: "#f8f9fa", borderRadius: "8px" }}>
+                  <h5>Add Your Review</h5>
+                  <div className="mb-3">
+                    <label className="form-label">Rating *</label>
+                    <div style={{ display: "flex", gap: "8px", fontSize: "24px" }}>
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => setReviewRating(star)}
+                          style={{
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            color: star <= reviewRating ? "#ffc107" : "#ccc",
+                            fontSize: "28px",
+                          }}
+                        >
+                          ★
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">Your Review *</label>
+                    <textarea
+                      className="form-control"
+                      rows="4"
+                      placeholder="Share your thoughts about this product..."
+                      value={reviewText}
+                      onChange={(e) => setReviewText(e.target.value)}
+                      maxLength="500"
+                    />
+                    <small className="text-muted">{reviewText.length}/500</small>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={handleAddReview}
+                    disabled={submittingReview}
+                  >
+                    {submittingReview ? "Submitting..." : "Submit Review"}
+                  </button>
+                </div>
+              )}
+
+              {!user && (
+                <div style={{ marginBottom: "30px", padding: "20px", backgroundColor: "#e3f2fd", borderRadius: "8px", textAlign: "center" }}>
+                  <p>Please <button type="button" className="btn btn-link" onClick={() => navigate("/auth")}>login</button> to add a review</p>
+                </div>
+              )}
+
+              {/* Display Reviews */}
+              {reviews.length > 0 ? (
+                <div className="mv-reviews-list">
+                  {reviews.map((review, idx) => (
+                    <div
+                      key={idx}
+                      className="mv-review-item"
+                      style={{
+                        padding: "15px",
+                        borderBottom: "1px solid #eee",
+                        marginBottom: "15px",
+                      }}
+                    >
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: "10px" }}>
+                        <div>
+                          <p className="mv-review-author" style={{ fontWeight: "600", marginBottom: "5px" }}>
+                            {review.userName}
+                          </p>
+                          <p className="mv-review-rating" style={{ color: "#ffc107", fontSize: "16px" }}>
+                            {renderStars(review.rating)}
+                          </p>
+                        </div>
+                        <small className="text-muted">
+                          {review.createdAt ? new Date(review.createdAt).toLocaleDateString() : ""}
+                        </small>
+                      </div>
+                      <p className="mv-review-text" style={{ color: "#555" }}>
+                        {review.text}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="mv-reviews-notice" style={{ textAlign: "center", color: "#999", padding: "20px" }}>
+                  No reviews yet. Be the first to review this product!
+                </p>
+              )}
             </motion.div>
           )}
         </div>
