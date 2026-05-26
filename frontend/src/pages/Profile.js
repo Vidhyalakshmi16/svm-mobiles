@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { FiUser, FiMail, FiShield, FiHeart, FiShoppingCart, FiLogOut } from "react-icons/fi";
+import { FiUser, FiShield, FiHeart, FiShoppingCart, FiLogOut } from "react-icons/fi";
 import { useAuth } from "../context/AuthContext";
 import "./Profile.css";
 
