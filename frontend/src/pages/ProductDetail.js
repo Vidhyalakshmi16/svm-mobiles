@@ -1,10 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
-import {
-  getProductById,
-  addProductReview,
-  canReviewProductApi,
-} from "../services/api";
+import { getProductById } from "../services/api";
 import { useCart } from "../context/CartContext";
 import { toast } from "react-toastify";
 import {
@@ -59,20 +55,7 @@ const normalizeProductData = (data) => {
     })
   );
 
-  if (!Array.isArray(normalized.reviews)) {
-    normalized.reviews = [];
-  }
-
   return normalized;
-};
-
-const renderStars = (rating) => {
-  const r = Math.max(0, Math.min(5, Number(rating) || 0));
-  const full = Math.floor(r);
-  let out = "";
-  for (let i = 0; i < full; i++) out += "★";
-  for (let i = full; i < 5; i++) out += "☆";
-  return out;
 };
 
 export default function ProductDetail() {
@@ -88,11 +71,6 @@ export default function ProductDetail() {
   const [activeImage, setActiveImage] = useState(0);
   const [activeTab, setActiveTab] = useState("description");
   const [selectedColor, setSelectedColor] = useState("");
-  const [reviewRating, setReviewRating] = useState(5);
-  const [reviewText, setReviewText] = useState("");
-  const [submittingReview, setSubmittingReview] = useState(false);
-  const [canReview, setCanReview] = useState(false);
-  const [reviewBlockReason, setReviewBlockReason] = useState("");
 
   useEffect(() => {
     const fetchProd = async () => {
@@ -113,25 +91,6 @@ export default function ProductDetail() {
     };
     fetchProd();
   }, [id]);
-
-  useEffect(() => {
-    const checkReviewEligibility = async () => {
-      if (!user) {
-        setCanReview(false);
-        setReviewBlockReason("");
-        return;
-      }
-      try {
-        const result = await canReviewProductApi(id);
-        setCanReview(!!result.canReview);
-        setReviewBlockReason(result.reason || "");
-      } catch {
-        setCanReview(false);
-        setReviewBlockReason("SERVER_ERROR");
-      }
-    };
-    checkReviewEligibility();
-  }, [id, user]);
 
   if (loading) {
     return (
@@ -170,14 +129,9 @@ export default function ProductDetail() {
     stock,
     colors = [],
     specifications = {},
-    reviews = [],
   } = product;
 
   const specificationEntries = Object.entries(specifications || {});
-  const averageRating =
-    reviews.length > 0
-      ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)
-      : null;
 
   const sellingPrice = finalPrice ?? price;
   const inStock = stock === undefined ? true : stock > 0;
@@ -187,46 +141,6 @@ export default function ProductDetail() {
   const productForCart = {
     ...product,
     selectedColor: selectedColor || undefined,
-  };
-
-  const getReviewBlockMessage = () => {
-    switch (reviewBlockReason) {
-      case "NOT_PURCHASED":
-        return "You can write a review only after purchasing this product.";
-      case "ALREADY_REVIEWED":
-        return "You have already reviewed this product.";
-      default:
-        return "You are not eligible to review this product right now.";
-    }
-  };
-
-  const handleAddReview = async () => {
-    if (!user) {
-      toast.info("Please login to add a review");
-      return;
-    }
-    if (!reviewText.trim()) {
-      toast.warn("Please enter a review");
-      return;
-    }
-    try {
-      setSubmittingReview(true);
-      const response = await addProductReview(id, {
-        rating: reviewRating,
-        text: reviewText,
-      });
-      toast.success("Review submitted!");
-      setReviewText("");
-      setReviewRating(5);
-      const updated = normalizeProductData(response.product || response);
-      if (updated) setProduct(updated);
-      setCanReview(false);
-      setReviewBlockReason("ALREADY_REVIEWED");
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to submit review");
-    } finally {
-      setSubmittingReview(false);
-    }
   };
 
   const handleAddToCart = () => {
@@ -253,7 +167,6 @@ export default function ProductDetail() {
       label: "Specs",
       count: specificationEntries.length,
     },
-    { id: "reviews", label: "Reviews", count: reviews.length },
   ];
 
   return (
@@ -311,20 +224,6 @@ export default function ProductDetail() {
           >
             {brand && <p className="pd-brand">{brand}</p>}
             <h1 className="pd-title">{name}</h1>
-
-            <div className="pd-rating-row">
-              {averageRating ? (
-                <>
-                  <span className="pd-stars">{renderStars(averageRating)}</span>
-                  <span className="pd-rating-text">
-                    {averageRating} · {reviews.length} review
-                    {reviews.length !== 1 ? "s" : ""}
-                  </span>
-                </>
-              ) : (
-                <span className="pd-rating-badge">No reviews yet</span>
-              )}
-            </div>
 
             <div className="pd-price-block">
               <span className="pd-price">
@@ -478,98 +377,7 @@ export default function ProductDetail() {
                   </tbody>
                 </table>
               ) : (
-                <p className="pd-empty-reviews">No specifications listed.</p>
-              )}
-            </div>
-          )}
-
-          {activeTab === "reviews" && (
-            <div className="pd-pane">
-              <h3>Customer reviews</h3>
-
-              {user && canReview && (
-                <div className="pd-review-form">
-                  <h4>Write a review</h4>
-                  <div className="pd-star-picker">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <button
-                        key={star}
-                        type="button"
-                        className={star <= reviewRating ? "is-on" : ""}
-                        onClick={() => setReviewRating(star)}
-                        aria-label={`${star} stars`}
-                      >
-                        ★
-                      </button>
-                    ))}
-                  </div>
-                  <textarea
-                    rows={4}
-                    placeholder="Share your experience with this product..."
-                    value={reviewText}
-                    onChange={(e) => setReviewText(e.target.value)}
-                    maxLength={500}
-                  />
-                  <p className="pd-char-count">{reviewText.length}/500</p>
-                  <button
-                    type="button"
-                    className="pd-btn pd-btn--primary"
-                    onClick={handleAddReview}
-                    disabled={submittingReview}
-                  >
-                    {submittingReview ? "Submitting…" : "Submit review"}
-                  </button>
-                </div>
-              )}
-
-              {user && !canReview && (
-                <div className="pd-review-notice pd-review-notice--warn">
-                  {getReviewBlockMessage()}
-                </div>
-              )}
-
-              {!user && (
-                <div className="pd-review-notice pd-review-notice--info">
-                  <button
-                    type="button"
-                    className="pd-btn pd-btn--outline"
-                    style={{ marginTop: "0.5rem" }}
-                    onClick={() => navigate("/auth")}
-                  >
-                    Log in to review after purchase
-                  </button>
-                </div>
-              )}
-
-              {reviews.length > 0 ? (
-                <div className="pd-reviews-list">
-                  {reviews.map((review) => (
-                    <article
-                      key={review._id || `${review.userName}-${review.createdAt}`}
-                      className="pd-review-card"
-                    >
-                      <div className="pd-review-head">
-                        <div>
-                          <p className="pd-review-author">{review.userName}</p>
-                          <p className="pd-review-stars">
-                            {renderStars(review.rating)}
-                          </p>
-                        </div>
-                        <time className="pd-review-date">
-                          {review.createdAt
-                            ? new Date(review.createdAt).toLocaleDateString(
-                                "en-IN",
-                                { day: "numeric", month: "short", year: "numeric" }
-                              )
-                            : ""}
-                        </time>
-                      </div>
-                      <p className="pd-review-body">{review.text}</p>
-                    </article>
-                  ))}
-                </div>
-              ) : (
-                <p className="pd-empty-reviews">No reviews yet for this product.</p>
+                <p className="pd-empty-state">No specifications listed.</p>
               )}
             </div>
           )}

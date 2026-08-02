@@ -357,40 +357,48 @@
   backdrop-filter: blur(4px);
 }
 
-.mv-card-body { padding: 1.1rem 1.2rem 1.2rem; }
+.mv-card-body {
+  padding: 1.25rem 1.3rem 1.3rem;
+  display: flex;
+  flex-direction: column;
+}
 
 .mv-card-brand {
   font-size: 0.7rem;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--ink-mute, #737373);
-  letter-spacing: 0.08em;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.5rem;
 }
 
 .mv-card-name {
-  font-size: 0.95rem;
+  font-size: 0.96rem;
   font-weight: 600;
   letter-spacing: -0.01em;
-  margin: 0 0 0.9rem;
-  line-height: 1.3;
+  margin: 0 0 1rem;
+  line-height: 1.35;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  min-height: 2.5em;
+  min-height: 2.6em;
+  color: var(--ink, #0a0a0a);
 }
 
 .mv-card-footer {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
+  padding-top: 0.9rem;
+  margin-top: auto;
+  border-top: 1px solid var(--line, #e7e5e4);
 }
 
-.mv-card-prices { display: flex; flex-direction: column; gap: 2px; }
+.mv-card-prices { display: flex; flex-direction: column; gap: 3px; }
 
 .mv-card-price {
-  font-size: 1.05rem;
+  font-size: 1.1rem;
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--ink, #0a0a0a);
@@ -400,6 +408,11 @@
   font-size: 0.78rem;
   color: var(--ink-mute, #737373);
   text-decoration: line-through;
+}
+
+.mv-card-arrow {
+  flex-shrink: 0;
+  margin-left: 0.75rem;
 }
 
 .mv-card-arrow {
@@ -497,26 +510,34 @@
 .mv-btn-ghost:hover { border-color: var(--ink, #0a0a0a); }
 
 /* ============ MOBILE DRAWER ============ */
+/* --bottom-nav-height defaults to the height of the app's fixed bottom tab
+   bar. Override this variable from a parent wrapper if your nav bar is a
+   different height. */
+:root {
+  --bottom-nav-height: 60px;
+}
+
 .mv-drawer-backdrop {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(4px);
-  z-index: 999;
+  z-index: 2000;
 }
 
 .mv-drawer {
   position: fixed;
-  bottom: 0;
+  bottom: var(--bottom-nav-height, 60px);
   left: 0;
   right: 0;
-  z-index: 1000;
+  z-index: 2001;
   background: var(--surface, #fff);
   border-radius: 24px 24px 0 0;
-  max-height: 85vh;
+  max-height: calc(85vh - var(--bottom-nav-height, 60px));
   display: flex;
   flex-direction: column;
   box-shadow: 0 -20px 60px rgba(0, 0, 0, 0.15);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 .mv-drawer-handle {
@@ -559,12 +580,36 @@
 @media (max-width: 768px) {
   .mv-products-wrapper { padding: 2rem 1.2rem 4rem; }
   .mv-layout { grid-template-columns: 1fr; gap: 0; }
-  .mv-product-grid { grid-template-columns: repeat(2, 1fr); gap: 1rem; }
-  .mv-card-body { padding: 0.9rem 1rem 1rem; }
-  .mv-card-name { font-size: 0.88rem; }
-  .mv-card-price { font-size: 0.95rem; }
-  .mv-toolbar { gap: 0.6rem; }
-  .mv-search { min-width: 0; }
-  .mv-select { padding: 0.7rem 2.4rem 0.7rem 1rem; font-size: 0.82rem; }
+  .mv-product-grid { grid-template-columns: repeat(2, 1fr); gap: 1.1rem; }
+  .mv-card-body { padding: 1rem 1.05rem 1.05rem; }
+  .mv-card-name { font-size: 0.88rem; min-height: 2.4em; margin-bottom: 0.8rem; }
+  .mv-card-footer { padding-top: 0.75rem; }
+  .mv-card-price { font-size: 0.98rem; }
+  .mv-toolbar {
+    gap: 0.7rem;
+    flex-wrap: wrap;
+  }
+  .mv-search {
+    min-width: 0;
+    max-width: none;
+    flex-basis: 100%;
+  }
+  .mv-toolbar-actions {
+    flex-basis: 100%;
+    width: 100%;
+    gap: 0.6rem;
+  }
+  .mv-toolbar-actions .mv-icon-btn {
+    flex: 1;
+    justify-content: center;
+  }
+  .mv-select-wrap {
+    flex: 1;
+  }
+  .mv-select {
+    width: 100%;
+    padding: 0.7rem 2.4rem 0.7rem 1rem;
+    font-size: 0.82rem;
+  }
   .mv-icon-btn { padding: 0.7rem 1rem; font-size: 0.82rem; }
 }
