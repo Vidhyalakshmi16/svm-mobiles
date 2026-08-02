@@ -511,7 +511,7 @@
 
 @media (max-width: 900px) {
   .pd-page {
-    padding-bottom: 5.5rem;
+    padding-bottom: calc(5.5rem + var(--bottom-nav-height, 60px));
   }
 
   .pd-loader {
@@ -550,11 +550,12 @@
   .pd-mobile-bar {
     display: flex;
     position: fixed;
-    bottom: 0;
+    bottom: var(--bottom-nav-height, 60px);
     left: 0;
     right: 0;
-    z-index: 100;
+    z-index: 500;
     padding: 0.75rem 1rem;
+    padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
     gap: 0.6rem;
     background: var(--surface);
     border-top: 1px solid var(--line);

@@ -358,7 +358,14 @@ export default function ProductDetail() {
           {activeTab === "description" && (
             <div className="pd-pane">
               <h3>About this product</h3>
-              <p>{description?.trim() || "No description available."}</p>
+              <p>
+                {(() => {
+                  const desc = description?.trim();
+                  const isRealText =
+                    desc && desc.toLowerCase() !== "undefined" && desc.toLowerCase() !== "null";
+                  return isRealText ? desc : "No description available.";
+                })()}
+              </p>
             </div>
           )}
 
