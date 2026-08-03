@@ -33,11 +33,7 @@ export default function AdminOrdersPage() {
   const handleStatusChange = async (orderId, newStatus) => {
     const order = orders.find((o) => o._id === orderId);
     if (!order) return;
-
-    if (newStatus === "CANCELLED") {
-      if (!window.confirm("Cancel this order?")) return;
-    }
-
+    
     try {
       const updated = await updateOrderStatusApi(orderId, newStatus);
       setOrders((prev) =>
@@ -55,6 +51,10 @@ export default function AdminOrdersPage() {
       o._id?.toLowerCase().includes(q) ||
       o.customer?.name?.toLowerCase().includes(q) ||
       o.customer?.phone?.toLowerCase().includes(q);
+
+    // Exclude payment-pending orders — they are not completed placements
+    const rawStatus = String(o.status || "").toUpperCase();
+    if (rawStatus.includes("PAYMENT") && rawStatus.includes("PENDING")) return false;
 
     const status = (o.status || "").toLowerCase();
     const matchesStatus = statusFilter === "all" || status === statusFilter;
@@ -76,9 +76,6 @@ export default function AdminOrdersPage() {
       case "COMPLETED": return "badge bg-success";
       case "CANCELLED":
       case "FAILED": return "badge bg-danger";
-      case "RETURNED": return "badge bg-warning text-dark";
-      case "REFUND_PROCESSING": return "badge bg-info";
-      case "REFUNDED": return "badge bg-success";
       case "PAID": return "badge bg-primary";
       case "IN_PROGRESS": return "badge bg-warning text-dark";
       default: return "badge bg-secondary";
@@ -88,6 +85,9 @@ export default function AdminOrdersPage() {
   return (
     <div className="container mt-4">
       <h3 className="fw-bold mb-3">Admin · Orders</h3>
+      <div className="alert alert-info py-2 mb-3">
+        If you want to return an item, please contact the shop directly.
+      </div>
 
       {/* Search and Filters */}
       <div className="d-flex gap-2 mb-3">
@@ -147,10 +147,6 @@ export default function AdminOrdersPage() {
                       <option value="PAID">Paid</option>
                       <option value="IN_PROGRESS">In Progress</option>
                       <option value="COMPLETED">Completed</option>
-                      <option value="CANCELLED">Cancelled</option>
-                      <option value="RETURNED">Returned</option>
-                      <option value="REFUND_PROCESSING">Refund Processing</option>
-                      <option value="REFUNDED">Refunded</option>
                       <option value="FAILED">Failed</option>
                     </select>
 

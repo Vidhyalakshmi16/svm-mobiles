@@ -50,6 +50,23 @@ export default function Checkout() {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
+  const normalizePhone = (raw) => {
+    if (!raw) return null;
+    let s = String(raw).trim();
+    // remove spaces, dashes, parentheses
+    s = s.replace(/[\s\-()]/g, "");
+    // strip leading + for processing
+    if (s.startsWith("+")) s = s.slice(1);
+    // remove any leading zeros
+    while (s.startsWith("0")) s = s.slice(1);
+    // now s could be 10 digits (local), or 12 digits starting with country code (91...)
+    if (/^\d{10}$/.test(s)) return "+91" + s;
+    if (/^91\d{10}$/.test(s)) return "+" + s;
+    // if it's digits and longer, try to prefix +
+    if (/^\d+$/.test(s) && s.length > 10) return "+" + s;
+    return null;
+  };
+
   const handlePlaceOrder = async (e) => {
     e.preventDefault();
     if (isEmpty || placing) return;
@@ -58,6 +75,14 @@ export default function Checkout() {
 
     if (!name || !phone || !address || !city || !pincode) {
       alert("Please fill all required fields");
+      return;
+    }
+
+    // Normalize phone into E.164-like format (+91XXXXXXXXXX) for messaging
+    const normalizedPhone = normalizePhone(phone);
+    if (!normalizedPhone) {
+      alert("Please enter a valid mobile number (e.g. 9876543210 or +91 98765 43210)");
+      setPlacing(false);
       return;
     }
 
@@ -71,7 +96,7 @@ export default function Checkout() {
     try {
       const customer = {
         name,
-        phone,
+        phone: normalizedPhone,
         address,
         city,
         pincode,
@@ -236,17 +261,17 @@ export default function Checkout() {
                   </label>
                   <div className="mv-form-input-wrapper">
                     <FiPhone className="mv-form-icon" />
-                    <input
-                      id="phone"
-                      type="tel"
-                      className="mv-form-input"
-                      name="phone"
-                      placeholder="+91 98765 43210"
-                      value={form.phone}
-                      onChange={handleChange}
-                      required
-                    />
-                  </div>
+                      <input
+                        id="phone"
+                        type="tel"
+                        className="mv-form-input"
+                        name="phone"
+                        placeholder="9876543210"
+                        value={form.phone}
+                        onChange={handleChange}
+                        required
+                      />
+                    </div>
                 </motion.div>
 
                 {/* Address Field */}
@@ -279,7 +304,7 @@ export default function Checkout() {
                         type="text"
                         className="mv-form-input"
                         name="city"
-                        placeholder="Bangalore"
+                        placeholder="Salem"
                         value={form.city}
                         onChange={handleChange}
                         required
@@ -296,7 +321,7 @@ export default function Checkout() {
                       type="text"
                       className="mv-form-input"
                       name="pincode"
-                      placeholder="560001"
+                      placeholder="636003"
                       value={form.pincode}
                       onChange={handleChange}
                       required

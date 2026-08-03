@@ -427,6 +427,12 @@
   gap: 0.6rem;
 }
 
+.orders-return-note {
+  color: var(--ord-ink-soft);
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
 .orders-btn {
   display: inline-flex;
   align-items: center;

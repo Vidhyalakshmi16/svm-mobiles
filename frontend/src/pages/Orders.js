@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   getMyOrdersApi,
   getMyServiceRequests,
-  cancelOrder,
   retryPaymentApi,
   verifyPaymentApi,
 } from "../services/api";
@@ -19,24 +18,7 @@ import {
 import { useAuth } from "../context/AuthContext";
 import "./Orders.css";
 
-const ORDER_FILTERS = [
-  { id: "all", label: "All" },
-  { id: "paid", label: "Paid" },
-  { id: "payment-pending", label: "Pending" },
-  { id: "in-progress", label: "Processing" },
-  { id: "completed", label: "Delivered" },
-  { id: "cancelled", label: "Cancelled" },
-  { id: "failed", label: "Failed" },
-  { id: "refund-processing", label: "Refunding" },
-  { id: "refunded", label: "Refunded" },
-];
-
-const SERVICE_FILTERS = [
-  { id: "all", label: "All" },
-  { id: "in-progress", label: "Active" },
-  { id: "completed", label: "Done" },
-  { id: "cancelled", label: "Cancelled" },
-];
+// Filters removed — showing all orders with simplified status UI
 
 const getStatus = (item) => {
   if (item._type === "order") {
@@ -55,12 +37,6 @@ const getStatus = (item) => {
       case "CANCELLED":
       case "CANCELED":
         return "Cancelled";
-      case "RETURNED":
-        return "Returned";
-      case "REFUND_PROCESSING":
-        return "Refund Processing";
-      case "REFUNDED":
-        return "Refunded";
       default:
         return item.status || "Pending";
     }
@@ -95,9 +71,8 @@ export default function Orders() {
   const [orders, setOrders] = useState([]);
   const [serviceRequests, setServiceRequests] = useState([]);
   const [activeType, setActiveType] = useState("orders");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter] = useState("all");
   const [loading, setLoading] = useState(true);
-  const [cancelLoadingId, setCancelLoadingId] = useState(null);
   const [expandedId, setExpandedId] = useState(null);
 
   useEffect(() => {
@@ -163,17 +138,22 @@ export default function Orders() {
   const orderCount = orders.length;
   const serviceCount = serviceRequests.length;
 
-  const activeFilters = activeType === "orders" ? ORDER_FILTERS : SERVICE_FILTERS;
+  // activeFilters removed; filters UI hidden
 
   const visibleCards = useMemo(() => {
     return combined.filter((item) => {
+      // hide payment-pending orders — these aren't completed placements
+      if (item._type === "order") {
+        const statusLabel = getStatus(item).toLowerCase();
+        if (statusLabel === "payment pending") return false;
+      }
+
       if (activeType === "orders" && item._type !== "order") return false;
       if (activeType === "service" && item._type !== "service") return false;
-      if (statusFilter === "all") return true;
-      const slug = getStatus(item).toLowerCase().replace(/\s+/g, "-");
-      return slug === statusFilter;
+      // no status filtering in simplified UI
+      return true;
     });
-  }, [combined, activeType, statusFilter]);
+  }, [combined, activeType]);
 
   const activeCount = useMemo(
     () =>
@@ -207,28 +187,7 @@ export default function Orders() {
     }
   };
 
-  const handleCancel = async (item) => {
-    if (item._type !== "order") return;
-    if (getStatus(item).toLowerCase() !== "paid") return;
-    if (!window.confirm("Cancel this order? A refund will be processed if applicable.")) return;
-
-    const key = `${item._type}_${item._uid}`;
-    setCancelLoadingId(key);
-
-    try {
-      await cancelOrder(item._uid);
-      setOrders((prev) =>
-        prev.map((o) =>
-          o._id === item._uid ? { ...o, status: "REFUND_PROCESSING" } : o
-        )
-      );
-    } catch (error) {
-      console.error("Cancel order failed:", error);
-      alert("Could not cancel order. Please try again.");
-    } finally {
-      setCancelLoadingId(null);
-    }
-  };
+  
 
   const toggleExpand = (id) => {
     setExpandedId((prev) => (prev === id ? null : id));
@@ -245,7 +204,7 @@ export default function Orders() {
           <span className="orders-eyebrow">My account</span>
           <h1 className="orders-title">Orders & repairs</h1>
           <p className="orders-lead">
-            Track purchases and service requests in one place. Tap a card to see full details.
+            Track purchases and service requests in one place. Tap a card to see full details. If you want to return an item, please contact the shop directly.
           </p>
         </header>
 
@@ -275,7 +234,6 @@ export default function Orders() {
               className={`orders-tab ${activeType === "orders" ? "orders-tab--active" : ""}`}
               onClick={() => {
                 setActiveType("orders");
-                setStatusFilter("all");
                 setExpandedId(null);
               }}
             >
@@ -290,7 +248,6 @@ export default function Orders() {
               className={`orders-tab ${activeType === "service" ? "orders-tab--active" : ""}`}
               onClick={() => {
                 setActiveType("service");
-                setStatusFilter("all");
                 setExpandedId(null);
               }}
             >
@@ -298,22 +255,6 @@ export default function Orders() {
               Repairs
               <span className="orders-tab-count">{serviceCount}</span>
             </button>
-          </div>
-
-          <span className="orders-filter-label">Filter by status</span>
-          <div className="orders-filters">
-            {activeFilters.map((filter) => (
-              <button
-                key={filter.id}
-                type="button"
-                className={`orders-filter-chip ${
-                  statusFilter === filter.id ? "orders-filter-chip--active" : ""
-                }`}
-                onClick={() => setStatusFilter(filter.id)}
-              >
-                {filter.label}
-              </button>
-            ))}
           </div>
         </div>
 
@@ -355,7 +296,6 @@ export default function Orders() {
                   isOrder &&
                   ["payment pending", "failed"].includes(statusLabel.toLowerCase());
                 const canCancel = isOrder && statusLabel.toLowerCase() === "paid";
-                const busy = cancelLoadingId === cardKey;
                 const createdAt = item.createdAt || item.created_on;
                 const firstItem = Array.isArray(item.items) ? item.items[0] : null;
                 const thumb =
@@ -528,22 +468,14 @@ export default function Orders() {
                               </button>
                             )}
                             {canCancel && (
-                              <button
-                                type="button"
-                                className="orders-btn orders-btn--danger"
-                                disabled={busy}
-                                onClick={() => handleCancel(item)}
-                              >
-                                {busy ? "Cancelling…" : "Cancel order"}
-                              </button>
+                              <div className="orders-return-note">
+                                If you want to return an item, please contact the shop directly.
+                              </div>
                             )}
                             {isOrder && item.status === "COMPLETED" && (
-                              <Link
-                                to={`/return/${item._uid}`}
-                                className="orders-btn orders-btn--outline"
-                              >
-                                Request return
-                              </Link>
+                              <div className="orders-return-note">
+                                If you want to return, contact the shop.
+                              </div>
                             )}
                           </div>
                         </motion.div>

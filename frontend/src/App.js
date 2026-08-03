@@ -21,8 +21,6 @@ import Profile from "./pages/Profile";
 import WishlistPage from "./pages/WishlistPage";
 import AuthPage from "./pages/AuthPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
-import ReturnOrder from "./pages/ReturnOrder";
-
 
 // Admin Pages
 import BulkDiscountPage from "./pages/BulkDiscountPage";
@@ -32,7 +30,6 @@ import AdminDashboardPage from "./pages/AdminDashboardPage";
 import AdminProductsPage from "./pages/AdminProductsPage";
 import AdminOrdersPage from "./pages/AdminOrdersPage";
 import AdminServiceRequestsPage from "./pages/AdminServiceRequestsPage";
-import AdminReturnsPage from "./pages/AdminReturnsPage";
 
 
 // Auth & Context
@@ -118,8 +115,6 @@ function App() {
                         <Route path="/wishlist" element={<WishlistPage />} />
                         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                         <Route path="/auth" element={<AuthPage />} />
-                        <Route path="/return/:orderId" element={<ReturnOrder />} />
-
 
                         <Route
                           path="/checkout"
@@ -164,7 +159,6 @@ function App() {
                             <Route path="orders" element={<AdminOrdersPage />} />
                             <Route path="service-requests" element={<AdminServiceRequestsPage />} />
                             <Route path="bulk-discount" element={<BulkDiscountPage />} />
-                            <Route path="/admin/returns" element={<AdminReturnsPage />} />
                             <Route path="" element={<Navigate to="/admin/dashboard" replace />} />
                           </Routes>
                         </div>
